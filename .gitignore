@@ -1,41 +1,95 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ============================================================
+# PokéVault — Root .gitignore
+# ============================================================
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
+# --- Node / Next.js ---
+node_modules/
+.pnpm-store/
+.next/
+.turbo/
+out/
+dist/
+build/
 *.tsbuildinfo
-next-env.d.ts
+.npm
+.yarn/cache
+.yarn/unplugged
+
+# --- Python / Scanner service ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+.env_python/
+*.egg-info/
+dist/
+build/
+*.so
+*.dylib
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+*.log
+
+# --- Model caches and weights ---
+models/
+*.onnx
+*.pt
+*.pth
+*.bin
+*.safetensors
+model_cache/
+huggingface_cache/
+.cache/
+
+# --- Temporary uploads ---
+uploads/
+tmp/
+temp/
+.tmp/
+
+# --- Secrets and credentials ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+
+# --- Supabase ---
+supabase/.temp/
+supabase/functions/.cache/
+
+# --- OS artefacts ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# --- IDE ---
+.vscode/settings.json
+.idea/
+*.iml
+
+# --- Testing ---
+coverage/
+playwright-report/
+test-results/
+
+# --- Vercel ---
+.vercel/
+
+# --- pnpm workspace lock files in sub-packages (keep root only) ---
+apps/web/pnpm-lock.yaml
