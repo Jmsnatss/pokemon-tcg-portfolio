@@ -1,6 +1,7 @@
 # docs/PROJECT_CONTEXT.md — PokéVault Architecture & State
 
-**Updated:** Milestone 0 — Foundation COMPLETE (commit `c627962`, branch `main`)  
+**Updated:** Milestone 0 — Foundation COMPLETE (commit `8735fa5`, branch `main`)  
+**Git Author:** James Dela Cruz <jrdelacruz@up.edu.ph>  
 **Next milestone:** Milestone 1 — Authentication & Catalog
 
 ---
@@ -15,7 +16,7 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
 
 | Milestone | Status | Notes |
 |---|---|---|
-| 0 — Repository & Foundation | ✅ Complete | All files committed; `pnpm install` pending user approval |
+| 0 — Repository & Foundation | ✅ Complete | Full directory structure & all files committed; `pnpm install` pending user execution/approval |
 | 1 — Authentication & Catalog | ⬜ Pending | Requires Supabase credentials + `pnpm install` |
 | 2 — Collection Management | ⬜ Pending | — |
 | 3 — Pricing & Portfolio | ⬜ Pending | — |
@@ -30,7 +31,7 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
 
 ### Repository structure
 ```
-pokemon-tcg-portfolio/           ← Git repo root (local, commit 8fee602)
+pokemon-tcg-portfolio/           ← Git repo root (local, commit 8735fa5, branch main)
 ├── .env.example                 ← All env vars documented
 ├── .gitignore                   ← Node, Python, secrets, models
 ├── .github/workflows/
@@ -54,38 +55,58 @@ pokemon-tcg-portfolio/           ← Git repo root (local, commit 8fee602)
 │       │   ├── (auth)/login/    ← Login page
 │       │   ├── (dashboard)/     ← Protected layout + all dashboard pages
 │       │   │   ├── layout.tsx   ← Auth check + AppShell
+│       │   │   ├── card/[id]/   ← Card detail view (dynamic route)
 │       │   │   ├── dashboard/   ← Dashboard with stat cards
 │       │   │   ├── collection/  ← Placeholder (Milestone 2)
 │       │   │   ├── scanner/     ← Placeholder (Milestone 4)
 │       │   │   ├── market/      ← Placeholder (Milestone 1)
 │       │   │   └── settings/    ← Settings page (reads profile)
-│       │   └── api/health/      ← Public health check endpoint
-│       ├── components/layout/   ← AppShell (sidebar nav + mobile menu)
+│       │   └── api/
+│       │       ├── auth/        ← Auth endpoints (.gitkeep)
+│       │       ├── catalog/     ← Catalog endpoints (.gitkeep)
+│       │       ├── collection/  ← Collection endpoints (.gitkeep)
+│       │       ├── currency/    ← Currency endpoints (.gitkeep)
+│       │       ├── export/      ← Export endpoints (.gitkeep)
+│       │       ├── health/      ← Public health check endpoint
+│       │       ├── pricing/     ← Pricing endpoints (.gitkeep)
+│       │       └── scanner/     ← Scanner orchestration (.gitkeep)
+│       ├── components/
+│       │   ├── cards/           ← Card presentation components (.gitkeep)
+│       │   ├── charts/          ← Financial/trend charts (.gitkeep)
+│       │   ├── layout/AppShell  ← AppShell (sidebar nav + mobile menu)
+│       │   ├── scanner/         ← Camera / scan components (.gitkeep)
+│       │   └── ui/              ← shadcn/ui primitives (.gitkeep)
 │       ├── features/
-│       │   ├── auth/LoginForm.tsx       ← Email/password with Zod validation
-│       │   ├── pricing/provider.ts      ← PricingProvider interface
-│       │   ├── pricing/justtcg.ts       ← JustTCG stub (Milestone 3)
-│       │   └── scanner/provider.ts     ← ScannerProvider interface
+│       │   ├── auth/            ← LoginForm.tsx + barrel index.ts
+│       │   ├── collection/      ← Collection management + barrel index.ts
+│       │   ├── portfolio/       ← Portfolio calculations + barrel index.ts
+│       │   ├── pricing/         ← PricingProvider + JustTCG stub + barrel index.ts
+│       │   ├── scanner/         ← ScannerProvider + barrel index.ts
+│       │   └── settings/        ← Settings feature + barrel index.ts
 │       ├── lib/
+│       │   ├── currency/frankfurter.ts  ← Exchange rate client
+│       │   ├── pricing/         ← Provider adapters (.gitkeep)
 │       │   ├── supabase/client.ts       ← Browser Supabase client
 │       │   ├── supabase/server.ts       ← Server + service-role clients
 │       │   ├── tcgdex/client.ts         ← TCGdex API client (caching)
-│       │   ├── currency/frankfurter.ts  ← Exchange rate client
 │       │   └── utils/
 │       │       ├── format.ts            ← formatCurrency, formatDate, etc.
 │       │       └── format.test.ts       ← Vitest unit tests (5 suites)
 │       └── types/index.ts              ← Re-exports from @pokevault/shared
-├── packages/shared/src/
-│   ├── index.ts                 ← Barrel re-export
-│   └── types.ts                 ← All canonical TypeScript types
+├── packages/shared/
+│   ├── package.json
+│   └── src/
+│       ├── index.ts             ← Barrel re-export
+│       └── types.ts             ← All canonical TypeScript types
 ├── scripts/
-│   ├── README.md                ← Script documentation
+│   ├── README.md                ← Standalone scripts guide
 │   └── sync-prices.ts           ← Price synchronization worker stub
-├── supabase/migrations/
+├── services/scanner/            ← Python FastAPI scanner service
 │   ├── app/main.py              ← FastAPI app + /health + /scan endpoints
 │   ├── app/models.py            ← Pydantic models
 │   ├── app/auth.py              ← Shared secret authentication
 │   ├── app/providers/
+│   │   ├── __init__.py
 │   │   └── ocr_provider.py      ← Tesseract OCR provider (fallback)
 │   ├── tests/test_scanner.py    ← pytest tests (health, format validation)
 │   ├── requirements.txt         ← fastapi, uvicorn, pillow, pytesseract
@@ -93,8 +114,25 @@ pokemon-tcg-portfolio/           ← Git repo root (local, commit 8fee602)
 ├── supabase/migrations/
 │   └── 20261116_000001_initial_schema.sql  ← Full 13-table schema + RLS
 └── docs/
-    └── PROJECT_CONTEXT.md       ← This file
+    └── PROJECT_CONTEXT.md       ← This architecture & state context file
 ```
+
+---
+
+## 3.1 Interrupted Files Recovery & Blueprint Alignment (Analysis Summary)
+
+During initial repository scaffolding, execution was paused before all designated files were linked and committed. The following analysis and actions were conducted to complete the foundation:
+
+1. **Resolution of Uncommitted Changes**: 42 modified files with line-ending and whitespace differences were inspected, staged, and committed cleanly.
+2. **Dynamic Route Restored**: Added `apps/web/src/app/(dashboard)/card/[id]/page.tsx` for card details navigation from the Market Explorer.
+3. **Feature Barrel Exports**: Implemented `index.ts` barrel exports across all feature modules (`auth`, `collection`, `portfolio`, `pricing`, `scanner`, `settings`) in compliance with `AGENTS.md`.
+4. **Shared Package Entrypoint**: Created `packages/shared/src/index.ts` re-exporting canonical TypeScript domain types.
+5. **Worker & Maintenance Scripts**: Added `scripts/sync-prices.ts` (stub referenced by `.github/workflows/price-sync.yml`) and `scripts/README.md`.
+6. **Component & API Directory Tracking**: Created `.gitkeep` files in `components/ui`, `cards`, `charts`, `scanner`, and all `app/api/*` subfolders to preserve the monorepo architecture boundaries in Git.
+7. **Git Configuration & Branch Alignment**:
+   - Switched repository default branch from `master` to `main` as required by Section 0.1 of the master specification.
+   - Cleared local test author override; commits are authored by `James Dela Cruz` <jrdelacruz@up.edu.ph>.
+   - Working tree verified 100% clean.
 
 ---
 
@@ -206,15 +244,15 @@ pokemon-tcg-portfolio/           ← Git repo root (local, commit 8fee602)
 
 ### To run locally right now:
 
-1. **Run `pnpm install`** in `apps/web/` to install all dependencies
+1. **Run `pnpm install`** in `apps/web/` to install all dependencies:
    ```powershell
    Set-Location "d:\School Files\Personal Files\Pokemon Scanner\pokemon-tcg-portfolio\apps\web"
    pnpm install
    ```
 
-2. **Create a Supabase project** at https://supabase.com (free tier)
-   - Copy the URL and anon key to `apps/web/.env.local`
-   - Apply migrations: `supabase db push` or paste SQL manually in Supabase SQL editor
+2. **Create a Supabase project** at https://supabase.com (free tier):
+   - Copy the Project URL and anon key to `apps/web/.env.local`
+   - Apply migrations: paste contents of `supabase/migrations/20261116_000001_initial_schema.sql` into the Supabase SQL editor and run it
 
 3. **Create your user account** via Supabase Auth dashboard (email/password)
 
@@ -235,7 +273,7 @@ After `pnpm install` succeeds:
 5. Add collection add-to-collection flow
 6. Run type-check, lint, build, tests
 
-### Dependencies not yet installed (need `pnpm install`):
+### Dependencies to be installed via `pnpm install`:
 
 - `@supabase/supabase-js` + `@supabase/ssr`
 - `zod` + `react-hook-form` + `@hookform/resolvers`
@@ -251,12 +289,12 @@ After `pnpm install` succeeds:
 ## 9. GitHub Remote
 
 **Local repo:** `d:\School Files\Personal Files\Pokemon Scanner\pokemon-tcg-portfolio\`  
-**Remote:** ❌ Not yet connected — no GitHub plugin authorized
+**Branch:** `main`  
+**Remote:** ❌ Not yet connected (no GitHub CLI/integration authenticated)
 
-To connect a GitHub remote after creating the repo at github.com:
+To connect and push to GitHub:
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/pokemon-tcg-portfolio.git
-git branch -M main
+git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/pokemon-tcg-portfolio.git
 git push -u origin main
 ```
 
@@ -264,11 +302,10 @@ git push -u origin main
 
 ## 10. Known Issues / Notes
 
-1. **`apps/web/pnpm-lock.yaml`** exists from the original scaffold but references the old root-level install, not the monorepo `apps/web/` package.json. It will be regenerated on next `pnpm install`.
-2. **`apps/web/pnpm-workspace.yaml`** is a stale artefact from scaffold — has been deleted.
-3. **Node.js 21.x engine warnings** from some packages (want ≥22). No functional impact confirmed; upgrade path is Node 22 LTS.
-4. **Scanner OCR fallback** requires Tesseract system binary — documented in `services/scanner/README`.
-5. **CardCorpus** model availability and license not yet verified — research required before Milestone 4.
+1. **`apps/web/pnpm-lock.yaml`** will be cleanly regenerated upon executing `pnpm install`.
+2. **Node.js 21.x engine warnings** from some packages (prefer ≥22 LTS). No blocking runtime issues identified.
+3. **Scanner OCR fallback** requires Tesseract system binary — documented in `services/scanner/README`.
+4. **CardCorpus** model availability and license verification will be evaluated prior to Milestone 4.
 
 ---
 
