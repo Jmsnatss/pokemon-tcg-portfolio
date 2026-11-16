@@ -80,3 +80,4 @@ export function buildCardImageUrl(
 export function collectionItemKey(id: string): string {
   return `ci-${id}`
 }
+

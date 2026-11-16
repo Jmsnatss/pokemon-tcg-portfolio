@@ -347,3 +347,4 @@ CREATE POLICY "Anyone can read exchange rates" ON exchange_rates FOR SELECT USIN
 -- sync_jobs: service-role only (no user RLS policy = blocked for all users)
 ALTER TABLE sync_jobs ENABLE ROW LEVEL SECURITY;
 -- sync_jobs is written by the service-role key only; no user-facing read needed
+

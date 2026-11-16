@@ -89,3 +89,4 @@ describe('buildCardImageUrl', () => {
     expect(buildCardImageUrl(null)).toBeNull()
   })
 })
+

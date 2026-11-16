@@ -117,3 +117,4 @@ async def scan_card(
         provider=result.provider,
         error=result.error,
     )
+

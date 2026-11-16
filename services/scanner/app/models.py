@@ -30,3 +30,4 @@ class HealthResponse(BaseModel):
     status: str
     service: str
     providers: Dict[str, bool]
+

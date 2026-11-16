@@ -21,3 +21,4 @@ export default async function DashboardLayout({
 
   return <AppShell>{children}</AppShell>
 }
+

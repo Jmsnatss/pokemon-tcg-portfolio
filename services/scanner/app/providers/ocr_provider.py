@@ -125,3 +125,4 @@ class OCRScannerProvider:
             if len(line) > 2 and not line.replace(" ", "").isdigit():
                 return line
         return None
+

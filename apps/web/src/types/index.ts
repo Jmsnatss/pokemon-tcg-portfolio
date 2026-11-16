@@ -34,3 +34,4 @@ export type {
 } from '@pokevault/shared'
 
 export { RAW_CONDITION_LABELS } from '@pokevault/shared'
+

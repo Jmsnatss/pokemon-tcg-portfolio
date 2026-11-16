@@ -74,3 +74,4 @@ def test_scan_valid_jpeg_returns_result():
     assert "provider" in data
     assert "scan_duration_ms" in data
     assert isinstance(data["candidates"], list)
+

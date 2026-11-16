@@ -26,3 +26,4 @@ def verify_scanner_secret(provided_secret: Optional[str]) -> None:
             status_code=401,
             detail="Invalid or missing scanner authentication secret.",
         )
+

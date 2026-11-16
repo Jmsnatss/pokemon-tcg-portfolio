@@ -123,3 +123,4 @@ class TCGdexClient {
 }
 
 export const tcgdex = new TCGdexClient()
+

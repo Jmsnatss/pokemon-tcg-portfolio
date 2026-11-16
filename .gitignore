@@ -93,3 +93,4 @@ test-results/
 
 # --- pnpm workspace lock files in sub-packages (keep root only) ---
 apps/web/pnpm-lock.yaml
+

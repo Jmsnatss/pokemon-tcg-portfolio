@@ -73,3 +73,4 @@ export function getJustTCGProvider(): PricingProvider {
 
   return new JustTCGProvider(apiKey)
 }
+
