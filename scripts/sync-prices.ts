@@ -15,3 +15,4 @@ main().catch((err) => {
   console.error('[sync-prices] Fatal error:', err)
   process.exit(1)
 })
+
