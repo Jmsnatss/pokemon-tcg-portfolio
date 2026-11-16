@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ScannerLoader } from '@/components/scanner/ScannerLoader'
 
 export const metadata: Metadata = {
   title: 'Scanner',
@@ -10,16 +11,10 @@ export default function ScannerPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Card Scanner</h1>
         <p className="text-sm text-[var(--pv-muted)] mt-1">
-          Scan or upload a card photo to identify and add it to your collection
+          Scan or upload a card photo to identify it, then add it to your collection
         </p>
       </div>
-      <div className="pv-panel p-12 flex flex-col items-center justify-center gap-3 text-center">
-        <p className="text-[var(--pv-muted)]">Scanner — Milestone 4</p>
-        <p className="text-sm text-[var(--pv-muted)]">
-          Camera capture and image recognition powered by CardCorpus + OCR fallback.
-        </p>
-      </div>
+      <ScannerLoader />
     </div>
   )
 }
-

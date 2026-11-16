@@ -43,3 +43,22 @@ export class UnavailableScannerProvider implements ScannerProvider {
   }
 }
 
+
+/** Hints read from a card photo; the server matches these against the catalog. */
+export type ScanHints = {
+  names: string[]
+  number: string | null
+  total: string | null
+}
+
+/**
+ * Client-side recognition backend. Runs in the browser so the photo never
+ * leaves the device; only the extracted text hints are sent to the server.
+ */
+export interface BrowserScannerProvider {
+  readonly name: string
+  readonly displayName: string
+  readonly isAvailable: boolean
+  readHints(image: Blob, onProgress?: (fraction: number) => void): Promise<ScanHints>
+  dispose(): Promise<void>
+}
