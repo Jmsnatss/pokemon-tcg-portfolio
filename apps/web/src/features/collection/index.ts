@@ -1,3 +1,3 @@
-// Collection management feature exports (Milestone 2)
-export {}
-
+export * from './variants'
+export * from './add-to-collection'
+export * from './AddToCollectionForm'

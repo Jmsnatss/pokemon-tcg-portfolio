@@ -17,7 +17,7 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
 | Milestone | Status | Notes |
 |---|---|---|
 | 0 — Repository & Foundation | ✅ Complete | Pushed to GitHub; `pnpm install`, type-check, lint, tests (17/17) and build verified |
-| 1 — Authentication & Catalog | ⬜ Pending | Requires Supabase credentials + `pnpm install` |
+| 1 — Authentication & Catalog | 🟡 In progress | Login verified against Supabase. Built: catalog search API + Market page, card detail page, add-to-collection (API + form). Pending: browser verification of add-to-collection, shadcn/ui, middleware→proxy migration |
 | 2 — Collection Management | ⬜ Pending | — |
 | 3 — Pricing & Portfolio | ⬜ Pending | — |
 | 4 — Card Scanning | ⬜ Pending | — |

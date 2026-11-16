@@ -28,6 +28,13 @@ export interface TCGdexCard {
   types: string[] | null
   illustrator: string | null
   image: string | null
+  variants?: {
+    normal?: boolean
+    reverse?: boolean
+    holo?: boolean
+    firstEdition?: boolean
+    wPromo?: boolean
+  }
   // Attacks, abilities, etc. available in full response
   [key: string]: unknown
 }
