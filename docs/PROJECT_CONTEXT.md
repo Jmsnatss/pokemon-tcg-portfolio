@@ -1,6 +1,6 @@
 # docs/PROJECT_CONTEXT.md — PokéVault Architecture & State
 
-**Updated:** Milestone 0 — Foundation COMPLETE (commit `8fee602`)  
+**Updated:** Milestone 0 — Foundation COMPLETE (commit `c627962`, branch `main`)  
 **Next milestone:** Milestone 1 — Authentication & Catalog
 
 ---
@@ -75,8 +75,13 @@ pokemon-tcg-portfolio/           ← Git repo root (local, commit 8fee602)
 │       │       ├── format.ts            ← formatCurrency, formatDate, etc.
 │       │       └── format.test.ts       ← Vitest unit tests (5 suites)
 │       └── types/index.ts              ← Re-exports from @pokevault/shared
-├── packages/shared/src/types.ts ← All canonical TypeScript types
-├── services/scanner/            ← Python FastAPI scanner service
+├── packages/shared/src/
+│   ├── index.ts                 ← Barrel re-export
+│   └── types.ts                 ← All canonical TypeScript types
+├── scripts/
+│   ├── README.md                ← Script documentation
+│   └── sync-prices.ts           ← Price synchronization worker stub
+├── supabase/migrations/
 │   ├── app/main.py              ← FastAPI app + /health + /scan endpoints
 │   ├── app/models.py            ← Pydantic models
 │   ├── app/auth.py              ← Shared secret authentication
