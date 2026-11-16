@@ -2,7 +2,7 @@
 
 **A personal Pokémon TCG card scanner, collection manager, and market portfolio tracker powered by computer vision and trading card pricing APIs.**
 
-> ⚠️ **Status: Active development — Milestone 0 (Foundation) in progress.**
+> **Status: Milestones 0-5 built (foundation, catalog, collection, pricing, scanner, price history). Deployment guide below.**
 
 ---
 
@@ -114,14 +114,27 @@ See [`.env.example`](.env.example) for a full reference of required and optional
 
 | # | Milestone | Status |
 |---|---|---|
-| 0 | Repository & Foundation | 🟡 In Progress |
-| 1 | Authentication & Catalog | ⬜ Pending |
-| 2 | Collection Management | ⬜ Pending |
-| 3 | Pricing & Portfolio | ⬜ Pending |
-| 4 | Card Scanning | ⬜ Pending |
-| 5 | Historical Pricing | ⬜ Pending |
+| 0 | Repository & Foundation | ✅ Complete |
+| 1 | Authentication & Catalog | ✅ Complete |
+| 2 | Collection Management | ✅ Complete (sealed products pending) |
+| 3 | Pricing & Portfolio | 🟡 Raw prices live; graded via JustTCG needs an API key |
+| 4 | Card Scanning | 🟡 Built; needs real-photo testing |
+| 5 | Historical Pricing | ✅ Complete |
 | 6 | Advanced Features | ⬜ Pending |
-| 7 | Production Readiness | ⬜ Pending |
+| 7 | Production Readiness | 🟡 Deployment documented |
+
+---
+
+## Deployment (free tier)
+
+Target: **Vercel Hobby** (app) + **Supabase Free** (database/auth) + **GitHub Actions** (daily sync). Hobby is for personal, non-commercial use.
+
+1. **Supabase**: run `supabase/migrations/*.sql` in the SQL editor. Under Authentication, turn **off** "Allow new users to sign up" (single-user app) after creating your user. Under Authentication > URL Configuration, set the Site URL to your Vercel URL. Rotate the secret key if it was ever shared.
+2. **Vercel**: import the GitHub repo, set **Root Directory** to `apps/web`, keep "Include source files outside of the Root Directory" enabled, framework Next.js, Node 22. Add environment variables (Production): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL` (your Vercel URL), `CRON_SECRET` (a long random string), optionally `JUSTTCG_API_KEY`.
+3. **GitHub**: add repository secrets `APP_URL` (your Vercel URL) and `CRON_SECRET` (same value). The `Price Sync` workflow then records prices and a portfolio snapshot daily, and can be run manually from the Actions tab.
+4. Verify: `GET /api/health` returns ok; sign in; add a card; click "Record today's snapshot" on the dashboard; run the Price Sync workflow once.
+
+Notes: the in-memory rate limits and the JustTCG daily budget reset on cold starts; JustTCG may block free keys used from shared cloud hosts (it returns `EXCESSIVE_FREE_TIER_USAGE`), so graded pricing is most reliable when running locally.
 
 ---
 

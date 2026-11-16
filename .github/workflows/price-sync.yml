@@ -5,12 +5,6 @@ on:
     # Run daily at 02:00 UTC (10:00 PHT)
     - cron: '0 2 * * *'
   workflow_dispatch:
-    inputs:
-      force_refresh:
-        description: 'Force refresh all prices (ignores staleness check)'
-        required: false
-        default: 'false'
-        type: boolean
 
 jobs:
   sync-prices:
@@ -18,32 +12,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 12
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: apps/web/pnpm-lock.yaml
-
-      - name: Install dependencies
-        working-directory: apps/web
-        run: pnpm install --frozen-lockfile
-
-      - name: Run price sync
-        working-directory: scripts
+      - name: Trigger price sync on the deployed app
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          JUSTTCG_API_KEY: ${{ secrets.JUSTTCG_API_KEY }}
-          PRICECHARTING_API_KEY: ${{ secrets.PRICECHARTING_API_KEY }}
-          FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'false' }}
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          # Script will be implemented in Milestone 5
-          echo "Price sync script not yet implemented — placeholder"
-          echo "FORCE_REFRESH=$FORCE_REFRESH"
-
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::error::Set the APP_URL and CRON_SECRET repository secrets"
+            exit 1
+          fi
+          code=$(curl -sS -o response.json -w '%{http_code}' --max-time 120 -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" "${APP_URL%/}/api/cron/sync-prices")
+          cat response.json
+          echo
+          [ "$code" = "200" ]

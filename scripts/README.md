@@ -1,7 +1,7 @@
 # PokéVault Utility & Maintenance Scripts
 
-This directory contains standalone execution scripts used for automated pipelines and database maintenance:
+Standalone scripts for maintenance tasks live here.
 
-- `sync-prices.ts` (Scheduled price sync executed by GitHub Actions)
-- Database seeders and maintenance routines (Milestone 5)
-
+The daily price sync is not a script: `.github/workflows/price-sync.yml` calls the deployed app's
+`/api/cron/sync-prices` endpoint (authorised with the `CRON_SECRET` bearer token), which runs
+`syncPrices` from `apps/web/src/features/portfolio/sync.ts`.
