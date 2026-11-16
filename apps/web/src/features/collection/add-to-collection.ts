@@ -15,7 +15,8 @@ export type AddToCollectionResult =
 async function ensureCardVariant(
   admin: SupabaseClient,
   card: TCGdexCard,
-  printingType: string
+  printingType: string,
+  grading: { company: string; grade: number } | null
 ): Promise<string> {
   let setRowId: string | null = null
   if (card.set?.id) {
@@ -62,21 +63,28 @@ async function ensureCardVariant(
     .single()
   if (cardErr) throw new Error(`cards upsert failed: ${cardErr.message}`)
 
-  const { data: existing, error: findErr } = await admin
+  let lookup = admin
     .from('card_variants')
     .select('id')
     .eq('card_id', cardRow.id)
     .eq('printing_type', printingType)
     .eq('language', 'en')
-    .is('grading_company', null)
-    .is('grade', null)
-    .maybeSingle()
+  lookup = grading
+    ? lookup.eq('grading_company', grading.company).eq('grade', grading.grade)
+    : lookup.is('grading_company', null).is('grade', null)
+  const { data: existing, error: findErr } = await lookup.maybeSingle()
   if (findErr) throw new Error(`card_variants lookup failed: ${findErr.message}`)
   if (existing) return existing.id
 
   const { data: created, error: insErr } = await admin
     .from('card_variants')
-    .insert({ card_id: cardRow.id, printing_type: printingType, language: 'en' })
+    .insert({
+      card_id: cardRow.id,
+      printing_type: printingType,
+      language: 'en',
+      grading_company: grading?.company ?? null,
+      grade: grading?.grade ?? null,
+    })
     .select('id')
     .single()
   if (insErr) throw new Error(`card_variants insert failed: ${insErr.message}`)
@@ -102,7 +110,11 @@ export async function addToCollection(
     return { ok: false, status: 422, error: 'That printing is not available for this card' }
   }
 
-  const variantId = await ensureCardVariant(admin, card, input.printingType)
+  const grading =
+    input.gradingCompany && input.grade !== undefined
+      ? { company: input.gradingCompany, grade: input.grade }
+      : null
+  const variantId = await ensureCardVariant(admin, card, input.printingType, grading)
 
   const { data, error } = await userClient
     .from('collection_items')
@@ -111,6 +123,10 @@ export async function addToCollection(
       card_variant_id: variantId,
       quantity: input.quantity,
       condition: input.condition,
+      is_graded: grading !== null,
+      grading_company: grading?.company ?? null,
+      grade: grading?.grade ?? null,
+      cert_number: grading ? input.certNumber ?? null : null,
       purchase_price: input.purchasePrice ?? null,
       purchase_currency: input.purchasePrice ? input.purchaseCurrency : null,
       purchase_date: input.purchaseDate ?? null,

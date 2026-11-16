@@ -10,7 +10,7 @@ type CookieToSet = { name: string; value: string; options: CookieOptions }
  * Protected routes: everything under /(dashboard) and /api (non-public)
  * Public routes: /login, /api/health
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

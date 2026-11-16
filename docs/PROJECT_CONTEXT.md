@@ -17,8 +17,8 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
 | Milestone | Status | Notes |
 |---|---|---|
 | 0 — Repository & Foundation | ✅ Complete | Pushed to GitHub; `pnpm install`, type-check, lint, tests (17/17) and build verified |
-| 1 — Authentication & Catalog | 🟡 In progress | Login verified against Supabase. Built: catalog search API + Market page, card detail page, add-to-collection (API + form). Pending: browser verification of add-to-collection, shadcn/ui, middleware→proxy migration |
-| 2 — Collection Management | ⬜ Pending | — |
+| 1 — Authentication & Catalog | ✅ Complete | Login, TCGdex search, card detail, add-to-collection verified in browser. shadcn/ui deferred (plain Tailwind used) |
+| 2 — Collection Management | 🟡 Built, awaiting browser verification | Collection page (search/filter/sort, cost basis per currency), edit/delete, graded slabs (PSA/BGS/CGC, user-entered grades only). Sealed products not yet done |
 | 3 — Pricing & Portfolio | ⬜ Pending | — |
 | 4 — Card Scanning | ⬜ Pending | — |
 | 5 — Historical Pricing | ⬜ Pending | — |
@@ -299,7 +299,7 @@ After `pnpm install` succeeds:
 1. **Foundation fixes after first install:** removed non-existent `@radix-ui/react-badge` and `@radix-ui/react-skeleton` from `apps/web/package.json` (they broke `pnpm install`); removed unused `Pokeball` icon import (not in lucide-react); typed Supabase cookie handlers; replaced `require()` with an ES import in `server.ts`; renamed `vitest.config.ts` → `vitest.config.mts` (ESM); disabled `cacheComponents`/`partialPrefetching` in `next.config.ts` (dynamic auth-gated routes failed prerender).
 2. **Build needs Supabase env vars** (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) even for `next build`; CI supplies placeholders. Locally, set `.env.local` or placeholders.
 3. **Node 21.x** is used locally (prefer ≥22 LTS).
-4. **Next.js 16 deprecates `middleware.ts`** in favor of `proxy.ts`; migrate in Milestone 1.
+4. `middleware.ts` was migrated to `src/proxy.ts` (Next.js 16). `agentRules: false` stops Next generating `apps/web/AGENTS.md`.
 5. **pnpm** ignored esbuild's build script; run `pnpm approve-builds` if esbuild issues appear.
 6. **Scanner OCR fallback** requires the Tesseract system binary.
 7. **CardCorpus** model availability and license must be verified before Milestone 4.

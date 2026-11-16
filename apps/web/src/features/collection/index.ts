@@ -1,3 +1,5 @@
 export * from './variants'
 export * from './add-to-collection'
+export * from './list'
 export * from './AddToCollectionForm'
+export * from './CollectionItemCard'

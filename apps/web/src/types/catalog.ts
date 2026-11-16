@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { GRADING_COMPANIES, isValidGrade } from '@/lib/utils/grading'
 
 export const CARD_PROVIDER_ID_REGEX = /^[A-Za-z0-9._-]{1,64}$/
 
@@ -29,27 +30,59 @@ export const catalogSearchSchema = z.object({
 
 export const cardProviderIdSchema = z.string().regex(CARD_PROVIDER_ID_REGEX, 'Invalid card id')
 
-export const addToCollectionSchema = z.object({
-  providerId: cardProviderIdSchema,
-  printingType: z.enum(PRINTING_TYPES),
-  quantity: z.coerce.number().int().min(1).max(9999),
-  condition: z.enum(RAW_CONDITIONS),
-  purchasePrice: z
-    .string()
-    .trim()
-    .regex(/^\d{1,8}(\.\d{1,4})?$/, 'Enter a valid amount')
-    .optional()
-    .or(z.literal('').transform(() => undefined)),
-  purchaseCurrency: z.enum(CURRENCIES).default('USD'),
-  purchaseDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
-    .optional()
-    .or(z.literal('').transform(() => undefined)),
-  notes: z.string().trim().max(1000).optional(),
-})
+const emptyToUndefined = (v: unknown): unknown => (v === '' || v === null ? undefined : v)
+
+const optionalPrice = z.preprocess(
+  emptyToUndefined,
+  z.string().trim().regex(/^\d{1,8}(\.\d{1,4})?$/, 'Enter a valid amount').optional()
+)
+const optionalDate = z.preprocess(
+  emptyToUndefined,
+  z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD').optional()
+)
+
+export const addToCollectionSchema = z
+  .object({
+    providerId: cardProviderIdSchema,
+    printingType: z.enum(PRINTING_TYPES),
+    quantity: z.coerce.number().int().min(1).max(9999),
+    condition: z.enum(RAW_CONDITIONS),
+    gradingCompany: z.preprocess(emptyToUndefined, z.enum(GRADING_COMPANIES).optional()),
+    grade: z.preprocess(emptyToUndefined, z.coerce.number().optional()),
+    certNumber: z.preprocess(emptyToUndefined, z.string().trim().max(40).optional()),
+    purchasePrice: optionalPrice,
+    purchaseCurrency: z.enum(CURRENCIES).default('USD'),
+    purchaseDate: optionalDate,
+    notes: z.string().trim().max(1000).optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (!v.gradingCompany) {
+      if (v.grade !== undefined || v.certNumber) {
+        ctx.addIssue({ code: 'custom', path: ['gradingCompany'], message: 'Select a grading company' })
+      }
+      return
+    }
+    if (v.grade === undefined || !isValidGrade(v.gradingCompany, v.grade)) {
+      ctx.addIssue({ code: 'custom', path: ['grade'], message: `Invalid ${v.gradingCompany} grade` })
+    }
+  })
 
 export type AddToCollectionInput = z.infer<typeof addToCollectionSchema>
+
+export const collectionItemIdSchema = z.string().uuid('Invalid item id')
+
+export const updateCollectionItemSchema = z
+  .object({
+    quantity: z.coerce.number().int().min(1).max(9999),
+    condition: z.enum(RAW_CONDITIONS),
+    purchasePrice: optionalPrice,
+    purchaseCurrency: z.enum(CURRENCIES).default('USD'),
+    purchaseDate: optionalDate,
+    notes: z.string().trim().max(1000).optional(),
+  })
+  .partial({ quantity: true, condition: true })
+
+export type UpdateCollectionItemInput = z.infer<typeof updateCollectionItemSchema>
 
 export type CatalogSearchResult = {
   id: string

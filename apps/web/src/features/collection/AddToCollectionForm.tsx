@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { RAW_CONDITION_LABELS } from '@pokevault/shared'
+import { GRADING_COMPANIES } from '@/lib/utils/grading'
 import {
   CURRENCIES,
   PRINTING_LABELS,
@@ -18,6 +19,7 @@ type Props = { providerId: string; printings: SupportedPrintingType[] }
 export function AddToCollectionForm({ providerId, printings }: Props) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
+  const [graded, setGraded] = useState(false)
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
 
   if (printings.length === 0) {
@@ -42,7 +44,10 @@ export function AddToCollectionForm({ providerId, printings }: Props) {
           providerId,
           printingType: fd.get('printingType'),
           quantity: fd.get('quantity'),
-          condition: fd.get('condition'),
+          condition: graded ? 'near_mint' : fd.get('condition'),
+          gradingCompany: graded ? fd.get('gradingCompany') : '',
+          grade: graded ? fd.get('grade') : '',
+          certNumber: graded ? fd.get('certNumber') ?? '' : '',
           purchasePrice: fd.get('purchasePrice') ?? '',
           purchaseCurrency: fd.get('purchaseCurrency'),
           purchaseDate: fd.get('purchaseDate') ?? '',
@@ -56,6 +61,7 @@ export function AddToCollectionForm({ providerId, printings }: Props) {
       }
       setMessage({ type: 'ok', text: 'Added to your collection.' })
       form.reset()
+      setGraded(false)
       router.refresh()
     } catch {
       setMessage({ type: 'error', text: 'Network error. Please try again.' })
@@ -75,14 +81,16 @@ export function AddToCollectionForm({ providerId, printings }: Props) {
             ))}
           </select>
         </label>
-        <label className="space-y-1 text-xs text-zinc-400">
-          Condition
-          <select name="condition" className={inputClass} defaultValue="near_mint">
-            {RAW_CONDITIONS.map((c) => (
-              <option key={c} value={c}>{RAW_CONDITION_LABELS[c]}</option>
-            ))}
-          </select>
-        </label>
+        {!graded && (
+          <label className="space-y-1 text-xs text-zinc-400">
+            Condition
+            <select name="condition" className={inputClass} defaultValue="near_mint">
+              {RAW_CONDITIONS.map((c) => (
+                <option key={c} value={c}>{RAW_CONDITION_LABELS[c]}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="space-y-1 text-xs text-zinc-400">
           Quantity
           <input name="quantity" type="number" min={1} max={9999} defaultValue={1} required className={inputClass} />
@@ -104,6 +112,30 @@ export function AddToCollectionForm({ providerId, printings }: Props) {
           </select>
         </label>
       </div>
+      <label className="flex items-center gap-2 text-sm text-zinc-300">
+        <input type="checkbox" checked={graded} onChange={(e) => setGraded(e.target.checked)} />
+        This is a graded slab
+      </label>
+      {graded && (
+        <div className="grid grid-cols-3 gap-3">
+          <label className="space-y-1 text-xs text-zinc-400">
+            Company
+            <select name="gradingCompany" className={inputClass} defaultValue="PSA">
+              {GRADING_COMPANIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1 text-xs text-zinc-400">
+            Grade
+            <input name="grade" inputMode="decimal" placeholder="10" required className={inputClass} />
+          </label>
+          <label className="space-y-1 text-xs text-zinc-400">
+            Cert number (optional)
+            <input name="certNumber" maxLength={40} className={inputClass} />
+          </label>
+        </div>
+      )}
       <label className="block space-y-1 text-xs text-zinc-400">
         Notes (optional)
         <textarea name="notes" rows={2} maxLength={1000} className={inputClass} />
