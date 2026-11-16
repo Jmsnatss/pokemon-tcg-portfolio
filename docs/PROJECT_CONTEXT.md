@@ -1,6 +1,6 @@
 # docs/PROJECT_CONTEXT.md — PokéVault Architecture & State
 
-**Updated:** Milestone 0 — Initial scaffold  
+**Updated:** Milestone 0 — Foundation COMPLETE (commit `8fee602`)  
 **Next milestone:** Milestone 1 — Authentication & Catalog
 
 ---
@@ -15,8 +15,8 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
 
 | Milestone | Status | Notes |
 |---|---|---|
-| 0 — Repository & Foundation | 🟡 In Progress | Scaffold complete; installing dependencies |
-| 1 — Authentication & Catalog | ⬜ Pending | — |
+| 0 — Repository & Foundation | ✅ Complete | All files committed; `pnpm install` pending user approval |
+| 1 — Authentication & Catalog | ⬜ Pending | Requires Supabase credentials + `pnpm install` |
 | 2 — Collection Management | ⬜ Pending | — |
 | 3 — Pricing & Portfolio | ⬜ Pending | — |
 | 4 — Card Scanning | ⬜ Pending | — |
@@ -26,7 +26,74 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
 
 ---
 
-## 3. Architecture Overview
+## 3. What Was Built in Milestone 0
+
+### Repository structure
+```
+pokemon-tcg-portfolio/           ← Git repo root (local, commit 8fee602)
+├── .env.example                 ← All env vars documented
+├── .gitignore                   ← Node, Python, secrets, models
+├── .github/workflows/
+│   ├── ci.yml                   ← Lint + typecheck + build + test
+│   └── price-sync.yml           ← Daily price sync (GitHub Actions)
+├── AGENTS.md                    ← Full dev conventions for AI agents
+├── README.md                    ← Project overview and getting started
+├── package.json                 ← Root monorepo scripts
+├── pnpm-workspace.yaml          ← Workspace config: apps/*, packages/*
+├── apps/web/                    ← Next.js 16 application
+│   ├── package.json             ← All dependencies listed (needs pnpm install)
+│   ├── next.config.ts           ← Security headers, TCGdex image domain
+│   ├── tsconfig.json            ← Strict mode + path aliases
+│   ├── vitest.config.ts         ← Unit test runner
+│   └── src/
+│       ├── middleware.ts         ← Auth redirect middleware
+│       ├── app/
+│       │   ├── layout.tsx       ← Root layout (dark theme, Geist font)
+│       │   ├── page.tsx         ← Root → redirect to /dashboard or /login
+│       │   ├── globals.css      ← Tailwind 4 base + skeleton animations
+│       │   ├── (auth)/login/    ← Login page
+│       │   ├── (dashboard)/     ← Protected layout + all dashboard pages
+│       │   │   ├── layout.tsx   ← Auth check + AppShell
+│       │   │   ├── dashboard/   ← Dashboard with stat cards
+│       │   │   ├── collection/  ← Placeholder (Milestone 2)
+│       │   │   ├── scanner/     ← Placeholder (Milestone 4)
+│       │   │   ├── market/      ← Placeholder (Milestone 1)
+│       │   │   └── settings/    ← Settings page (reads profile)
+│       │   └── api/health/      ← Public health check endpoint
+│       ├── components/layout/   ← AppShell (sidebar nav + mobile menu)
+│       ├── features/
+│       │   ├── auth/LoginForm.tsx       ← Email/password with Zod validation
+│       │   ├── pricing/provider.ts      ← PricingProvider interface
+│       │   ├── pricing/justtcg.ts       ← JustTCG stub (Milestone 3)
+│       │   └── scanner/provider.ts     ← ScannerProvider interface
+│       ├── lib/
+│       │   ├── supabase/client.ts       ← Browser Supabase client
+│       │   ├── supabase/server.ts       ← Server + service-role clients
+│       │   ├── tcgdex/client.ts         ← TCGdex API client (caching)
+│       │   ├── currency/frankfurter.ts  ← Exchange rate client
+│       │   └── utils/
+│       │       ├── format.ts            ← formatCurrency, formatDate, etc.
+│       │       └── format.test.ts       ← Vitest unit tests (5 suites)
+│       └── types/index.ts              ← Re-exports from @pokevault/shared
+├── packages/shared/src/types.ts ← All canonical TypeScript types
+├── services/scanner/            ← Python FastAPI scanner service
+│   ├── app/main.py              ← FastAPI app + /health + /scan endpoints
+│   ├── app/models.py            ← Pydantic models
+│   ├── app/auth.py              ← Shared secret authentication
+│   ├── app/providers/
+│   │   └── ocr_provider.py      ← Tesseract OCR provider (fallback)
+│   ├── tests/test_scanner.py    ← pytest tests (health, format validation)
+│   ├── requirements.txt         ← fastapi, uvicorn, pillow, pytesseract
+│   └── Dockerfile               ← Multi-stage build with Tesseract
+├── supabase/migrations/
+│   └── 20261116_000001_initial_schema.sql  ← Full 13-table schema + RLS
+└── docs/
+    └── PROJECT_CONTEXT.md       ← This file
+```
+
+---
+
+## 4. Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -48,64 +115,45 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
        │                      │
 ┌──────▼──────┐    ┌──────────▼──────────────────────────────────┐
 │  Supabase   │    │  Python FastAPI Scanner (services/scanner/)  │
-│  PostgreSQL │    │    - CardCorpus image matching               │
-│  Auth       │    │    - OCR fallback (Tesseract)                │
-│  RLS        │    │    - Returns candidates + confidence         │
+│  PostgreSQL │    │    - CardCorpus image matching (pending)     │
+│  Auth (RLS) │    │    - OCR fallback (Tesseract)                │
 └─────────────┘    └────────────────────────────────────────────┘
                               │ HTTP (local or Docker)
 ┌─────────────────────────────▼──────────────────────────────────┐
 │  External APIs                                                  │
-│    TCGdex    — card catalog (free, no key)                      │
-│    JustTCG   — current + historical prices (API key required)   │
-│    PriceCharting — secondary prices (optional API key)          │
-│    Frankfurter — exchange rates (free, no key)                  │
+│    TCGdex        — card catalog (free, no key required)         │
+│    JustTCG       — pricing (API key required, Milestone 3)      │
+│    PriceCharting — secondary pricing (optional, Milestone 3)    │
+│    Frankfurter   — exchange rates (free, no key required)       │
 └────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. Database Schema Summary
+## 5. Database Schema Summary
 
-All migrations in `supabase/migrations/`. See migration files for full DDL.
+**Migration file:** `supabase/migrations/20261116_000001_initial_schema.sql`
 
-### Tables
-
-| Table | Purpose |
-|---|---|
-| `profiles` | Extended user profile (display name, preferred currency) |
-| `card_sets` | Pokémon TCG expansion sets (cached from TCGdex) |
-| `cards` | Individual card records (cached from TCGdex) |
-| `card_variants` | Specific printings (holo, reverse holo, graded versions) |
-| `collection_items` | User-owned raw cards |
-| `sealed_products` | Sealed product catalog |
-| `sealed_collection_items` | User-owned sealed products |
-| `price_sources` | Pricing provider registry |
-| `current_prices` | Latest prices per card variant per provider |
-| `price_history` | Historical price observations |
-| `portfolio_snapshots` | Daily portfolio value snapshots |
-| `exchange_rates` | Cached currency rates with effective dates |
-| `sync_jobs` | Scheduled sync execution log |
-
-### Key constraints
-
-- All monetary columns: `NUMERIC(12, 4)` or `NUMERIC(18, 6)`
-- RLS enabled on: `collection_items`, `sealed_collection_items`, `portfolio_snapshots`
-- Soft-delete not implemented — destructive deletes cascade appropriately
-
----
-
-## 5. Frontend Page Map
-
-| Route | Component | Status |
+| Table | Purpose | RLS |
 |---|---|---|
-| `/` | Redirect to `/dashboard` or `/login` | ⬜ |
-| `/login` | Email/password login form | ⬜ |
-| `/dashboard` | Portfolio overview, charts, recent additions | ⬜ |
-| `/collection` | Card grid/list with search and filters | ⬜ |
-| `/scanner` | Camera / upload → recognition → add to collection | ⬜ |
-| `/market` | TCGdex catalog search + pricing | ⬜ |
-| `/card/[id]` | Card detail: art, metadata, prices, history | ⬜ |
-| `/settings` | Currency, account, sync status, export | ⬜ |
+| `profiles` | User profile (display name, currency) | User-scoped |
+| `card_sets` | TCG expansion sets (TCGdex cache) | Public read |
+| `cards` | Individual card records (TCGdex cache) | Public read |
+| `card_variants` | Specific printings + graded versions | Public read |
+| `collection_items` | User-owned raw/graded cards | User-scoped |
+| `sealed_products` | Sealed product catalog | Public read |
+| `sealed_collection_items` | User-owned sealed products | User-scoped |
+| `price_sources` | Pricing provider registry | Public read |
+| `current_prices` | Latest prices per variant | Public read |
+| `price_history` | Historical observations | Public read |
+| `portfolio_snapshots` | Daily portfolio value | User-scoped |
+| `exchange_rates` | Frankfurter cached rates | Public read |
+| `sync_jobs` | Scheduled sync log | Service-role only |
+
+**Key constraints:**
+- All monetary columns: `NUMERIC(12, 4)` or `NUMERIC(18, 6)` — no floats
+- Auto-create profile trigger on `auth.users` insert
+- RLS enabled on all 13 tables
 
 ---
 
@@ -114,103 +162,124 @@ All migrations in `supabase/migrations/`. See migration files for full DDL.
 ### TCGdex
 - **Base URL:** `https://api.tcgdex.net/v2`
 - **Auth:** None required
-- **Rate limits:** Unknown; implement HTTP caching (ETag/Cache-Control) and local DB cache
-- **Usage:** Catalog search, card metadata, set lists, artwork URLs
-- **Docs:** https://tcgdex.dev/
+- **Client:** `apps/web/src/lib/tcgdex/client.ts` — implemented with 1h cache
+- **Methods:** `listSets()`, `getSet()`, `searchCards()`, `getCard()`, `getCardsBySet()`
+- **Status:** ✅ Client implemented; integration into API routes = Milestone 1
 
 ### JustTCG
-- **Base URL:** TBD (requires account creation + API key)
-- **Auth:** API key in `Authorization` header (server-side only)
-- **Usage:** Current prices, historical observations, condition-based pricing
-- **Docs:** https://justtcg.com/docs
-- **Status:** API key not yet configured — implement provider interface and document setup
-
-### PriceCharting
-- **Status:** Optional secondary provider — implement after JustTCG
-- **Auth:** API key required
+- **Status:** ⚠️ API key not obtained. Stub returns `isAvailable: false`
+- **Action required:** Register at https://justtcg.com and set `JUSTTCG_API_KEY`
+- **Implementation:** `apps/web/src/features/pricing/justtcg.ts` — Milestone 3
 
 ### Frankfurter
 - **Base URL:** `https://api.frankfurter.dev`
 - **Auth:** None required
-- **Usage:** USD/PHP/EUR/JPY conversion rates, cached daily
+- **Client:** `apps/web/src/lib/currency/frankfurter.ts` — implemented with 24h cache
+- **Status:** ✅ Client implemented; DB caching = Milestone 3
 
 ---
 
-## 7. Environment Dependencies
+## 7. Environment Variables Required
 
-| Variable | Required | Service |
+| Variable | Required | Status |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes (server) | Supabase |
-| `NEXT_PUBLIC_TCGDEX_BASE_URL` | No (has default) | TCGdex |
-| `JUSTTCG_API_KEY` | For pricing | JustTCG |
-| `PRICECHARTING_API_KEY` | Optional | PriceCharting |
-| `FRANKFURTER_BASE_URL` | No (has default) | Frankfurter |
-| `SCANNER_SERVICE_URL` | For scanning | Local FastAPI |
-| `SCANNER_API_SECRET` | Recommended | Local FastAPI |
-| `NEXT_PUBLIC_APP_URL` | For server components | App |
-| `DISABLE_PUBLIC_SIGNUP` | Recommended | App |
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ Yes | ❌ Not set — create Supabase project |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ Yes | ❌ Not set |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ Server | ❌ Not set |
+| `JUSTTCG_API_KEY` | Pricing | ❌ Not obtained |
+| `PRICECHARTING_API_KEY` | Optional | ❌ Optional |
+| `FRANKFURTER_BASE_URL` | No | ✅ Has default |
+| `NEXT_PUBLIC_TCGDEX_BASE_URL` | No | ✅ Has default |
+| `SCANNER_SERVICE_URL` | Scanner | ✅ Defaults to localhost:8000 |
+| `SCANNER_API_SECRET` | Recommended | ❌ Not set |
+| `NEXT_PUBLIC_APP_URL` | Server | ❌ Not set |
+| `DISABLE_PUBLIC_SIGNUP` | Recommended | ❌ Not set |
 
 ---
 
-## 8. Deployment Architecture
+## 8. Immediate Blockers & Next Steps
 
-| Component | Platform | Notes |
-|---|---|---|
-| Next.js app | Vercel Hobby | Free tier, automatic HTTPS |
-| Database | Supabase Free | 500 MB, up to 50K monthly active users |
-| Auth | Supabase Auth | Included in Supabase Free |
-| Scheduled sync | GitHub Actions | Free minutes for public/private repos |
-| Scanner service | Local / Docker | No free GPU hosting assumed |
+### To run locally right now:
 
-**Deployment not yet performed.** Remote repository and credentials required.
+1. **Run `pnpm install`** in `apps/web/` to install all dependencies
+   ```powershell
+   Set-Location "d:\School Files\Personal Files\Pokemon Scanner\pokemon-tcg-portfolio\apps\web"
+   pnpm install
+   ```
+
+2. **Create a Supabase project** at https://supabase.com (free tier)
+   - Copy the URL and anon key to `apps/web/.env.local`
+   - Apply migrations: `supabase db push` or paste SQL manually in Supabase SQL editor
+
+3. **Create your user account** via Supabase Auth dashboard (email/password)
+
+4. **Run the dev server:**
+   ```powershell
+   pnpm --filter web dev
+   ```
+
+5. Open http://localhost:3000 — you should land on the login page
+
+### Milestone 1 implementation plan:
+
+After `pnpm install` succeeds:
+1. Install shadcn/ui components
+2. Add catalog search API route (`/api/catalog/search`)
+3. Build market page with real TCGdex search
+4. Build card detail page (`/card/[id]`)
+5. Add collection add-to-collection flow
+6. Run type-check, lint, build, tests
+
+### Dependencies not yet installed (need `pnpm install`):
+
+- `@supabase/supabase-js` + `@supabase/ssr`
+- `zod` + `react-hook-form` + `@hookform/resolvers`
+- `recharts` + `lucide-react`
+- `clsx` + `tailwind-merge` + `class-variance-authority`
+- All `@radix-ui/*` primitives
+- `date-fns` + `papaparse`
+- `vitest` + `@vitejs/plugin-react`
+- `prettier` + `@playwright/test`
 
 ---
 
-## 9. Open Issues and Blockers
+## 9. GitHub Remote
 
-| Issue | Severity | Notes |
-|---|---|---|
-| GitHub remote not yet connected | Low | Local repo initialized; needs `git remote add origin` |
-| JustTCG API key not obtained | Medium | Pricing features will show "unavailable" until configured |
-| Scanner model availability unverified | Medium | CardCorpus research pending; OCR fallback implemented first |
-| Node.js 21.x engine warnings from some packages | Low | Some packages prefer 18/20/22; no functional impact confirmed |
-| No Supabase project created | Medium | Migrations can be written but not applied until project exists |
+**Local repo:** `d:\School Files\Personal Files\Pokemon Scanner\pokemon-tcg-portfolio\`  
+**Remote:** ❌ Not yet connected — no GitHub plugin authorized
 
----
-
-## 10. Immediate Next Steps (Milestone 1)
-
-1. Install remaining dependencies: `@supabase/supabase-js`, `zod`, `shadcn/ui`, `lucide-react`, `recharts`, `react-hook-form`
-2. Write initial database migration (`001_initial_schema.sql`)
-3. Implement Supabase client utilities (browser + server)
-4. Build login page and auth middleware
-5. Implement TCGdex client and catalog search API route
-6. Build catalog search page and card detail page
-7. Add type-check and lint scripts to CI
+To connect a GitHub remote after creating the repo at github.com:
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/pokemon-tcg-portfolio.git
+git branch -M main
+git push -u origin main
+```
 
 ---
 
-## 11. Known Limitations
+## 10. Known Issues / Notes
 
-- **Scanner:** CardCorpus availability and licensing not yet verified. OCR fallback (Tesseract) is significantly less accurate. Manual lookup always available.
-- **Historical pricing:** Depends on JustTCG or PriceCharting providing authorized historical endpoints — not guaranteed on free tiers.
-- **GPU inference:** No free continuous cloud GPU hosting available. Scanner service designed for local or Docker execution.
-- **Sealed products:** Catalog data model designed; recognition and pricing not implemented in Milestone 0.
+1. **`apps/web/pnpm-lock.yaml`** exists from the original scaffold but references the old root-level install, not the monorepo `apps/web/` package.json. It will be regenerated on next `pnpm install`.
+2. **`apps/web/pnpm-workspace.yaml`** is a stale artefact from scaffold — has been deleted.
+3. **Node.js 21.x engine warnings** from some packages (want ≥22). No functional impact confirmed; upgrade path is Node 22 LTS.
+4. **Scanner OCR fallback** requires Tesseract system binary — documented in `services/scanner/README`.
+5. **CardCorpus** model availability and license not yet verified — research required before Milestone 4.
 
 ---
 
-## 12. Licensing Notes
+## 11. File Links
 
-No application license has been applied pending review of:
+| File | Purpose |
+|---|---|
+| [AGENTS.md](../AGENTS.md) | Development conventions for AI agents |
+| [.env.example](../.env.example) | Environment variable reference |
+| [apps/web/package.json](../apps/web/package.json) | All frontend dependencies |
+| [supabase/migrations/…_initial_schema.sql](../supabase/migrations/20261116_000001_initial_schema.sql) | Full DB schema |
+| [packages/shared/src/types.ts](../packages/shared/src/types.ts) | All canonical types |
+| [apps/web/src/features/pricing/provider.ts](../apps/web/src/features/pricing/provider.ts) | Pricing provider interface |
+| [apps/web/src/features/scanner/provider.ts](../apps/web/src/features/scanner/provider.ts) | Scanner provider interface |
+| [services/scanner/app/main.py](../services/scanner/app/main.py) | FastAPI scanner entrypoint |
 
-- Next.js and React (MIT)
-- Tailwind CSS (MIT)
-- shadcn/ui (MIT)
-- Supabase client libraries (MIT / Apache 2.0)
-- TCGdex (terms of service review required)
-- CardCorpus model weights (terms of use / research license review required)
-- Pokémon card artwork (The Pokémon Company — strictly no reproduction beyond fair-use thumbnail display)
+---
 
-**Do not publish or redistribute card artwork beyond what is served by TCGdex's authorized image CDN.**
+*Last updated: 2026-11-16 — Milestone 0 complete*
