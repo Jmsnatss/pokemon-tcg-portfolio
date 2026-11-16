@@ -43,34 +43,36 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
     <div className="space-y-6 max-w-4xl">
       <Link
         href="/market"
-        className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 transition"
+        className="pv-btn pv-btn-ghost"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Market Explorer
       </Link>
 
       <div className="grid gap-6 md:grid-cols-[320px_1fr]">
-        <div>
+        <div className="pv-tilt">
           {imageUrl ? (
+            <div className="pv-card-art pv-pop">
             <Image
               src={imageUrl}
               alt={card.name}
               width={600}
               height={825}
               priority
-              className="h-auto w-full rounded-xl"
+              className="h-auto w-full"
             />
+            </div>
           ) : (
-            <div className="flex aspect-[245/342] items-center justify-center rounded-xl bg-zinc-800 text-sm text-zinc-500">
+            <div className="flex aspect-[245/342] items-center justify-center rounded-xl bg-black/30 text-sm text-[var(--pv-muted)]">
               No image available
             </div>
           )}
         </div>
 
-        <div className="space-y-6">
+        <div className="pv-rise space-y-6">
           <div>
-            <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">{card.id}</span>
-            <h1 className="text-2xl font-bold text-zinc-100 mt-1">{card.name}</h1>
+            <span className="text-xs font-mono text-[var(--pv-muted)] uppercase tracking-wider">{card.id}</span>
+            <h1 className="text-2xl font-bold text-white mt-1">{card.name}</h1>
           </div>
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
@@ -78,18 +80,18 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
               .filter(([, v]) => v)
               .map(([k, v]) => (
                 <div key={k}>
-                  <dt className="text-xs text-zinc-500">{k}</dt>
-                  <dd className="text-zinc-200">{v}</dd>
+                  <dt className="text-xs text-[var(--pv-muted)]">{k}</dt>
+                  <dd className="text-white">{v}</dd>
                 </div>
               ))}
           </dl>
 
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-zinc-100">Add to collection</h2>
+          <div className="pv-panel space-y-4 p-5">
+            <h2 className="text-base font-bold text-white">Add to your collection</h2>
             <AddToCollectionForm providerId={card.id} printings={printings} />
           </div>
 
-          <p className="text-xs text-zinc-500">Price: unavailable until a pricing provider is connected (Milestone 3).</p>
+          <p className="text-xs text-[var(--pv-muted)]">Price: unavailable until a pricing provider is connected (Milestone 3).</p>
         </div>
       </div>
     </div>

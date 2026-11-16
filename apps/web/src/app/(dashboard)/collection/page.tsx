@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Field } from '@/components/ui/Field'
+import { Pokeball } from '@/components/ui/Pokeball'
 import { CollectionItemCard } from '@/features/collection/CollectionItemCard'
 import {
   fetchCollection,
@@ -32,14 +34,11 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
   const totalCards = rows.reduce((n, r) => n + r.quantity, 0)
   const costs = Object.entries(totalCostByCurrency(rows))
 
-  const fieldClass =
-    'rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:border-zinc-500 focus:outline-none'
-
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-50">Collection</h1>
-        <p className="text-sm text-zinc-400 mt-1">
+        <h1 className="text-2xl font-bold text-white">Collection</h1>
+        <p className="text-sm text-[var(--pv-muted)] mt-1">
           {all.length === 0
             ? 'Your collection is empty.'
             : `${totalCards} card${totalCards === 1 ? '' : 's'} in ${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}` +
@@ -47,32 +46,39 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
         </p>
       </div>
 
-      <form method="get" className="flex flex-wrap gap-3">
-        <input name="q" defaultValue={filters.q} placeholder="Search name or set" aria-label="Search collection" className={`${fieldClass} min-w-48 flex-1`} />
-        <select name="type" defaultValue={filters.type} aria-label="Type" className={fieldClass}>
-          <option value="all">All</option>
-          <option value="raw">Raw</option>
-          <option value="graded">Graded</option>
-        </select>
-        <select name="sort" defaultValue={filters.sort} aria-label="Sort" className={fieldClass}>
-          <option value="newest">Newest</option>
-          <option value="name">Name</option>
-          <option value="quantity">Quantity</option>
-        </select>
-        <button type="submit" className="rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-100 hover:bg-zinc-700">Apply</button>
+      <form method="get" className="pv-panel grid gap-3 p-4 sm:grid-cols-[1fr_150px_150px_auto] sm:items-end">
+        <Field label="Search">
+          <input name="q" defaultValue={filters.q} placeholder="Card name or set" className="pv-control" />
+        </Field>
+        <Field label="Show">
+          <select name="type" defaultValue={filters.type} className="pv-control">
+            <option value="all">All cards</option>
+            <option value="raw">Raw only</option>
+            <option value="graded">Graded only</option>
+          </select>
+        </Field>
+        <Field label="Sort by">
+          <select name="sort" defaultValue={filters.sort} className="pv-control">
+            <option value="newest">Newest first</option>
+            <option value="name">Name (A-Z)</option>
+            <option value="quantity">Most copies</option>
+          </select>
+        </Field>
+        <button type="submit" className="pv-btn pv-btn-gold h-[38px]">Apply</button>
       </form>
 
       {all.length === 0 ? (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-12 text-center space-y-3">
-          <p className="text-zinc-400">Nothing here yet.</p>
-          <Link href="/market" className="text-sm text-yellow-300 hover:underline">Find cards in the Market Explorer</Link>
+        <div className="pv-panel flex flex-col items-center gap-4 p-12 text-center">
+          <Pokeball className="h-14 w-14" />
+          <p className="text-[var(--pv-muted)]">Your Pokédex of cards is empty. Time to start your journey!</p>
+          <Link href="/market" className="pv-btn pv-btn-primary">Find cards in the Market</Link>
         </div>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-zinc-400">No entries match your filters.</p>
+        <p className="text-sm text-[var(--pv-muted)]">No entries match your filters.</p>
       ) : (
         <ul className="grid gap-4 lg:grid-cols-2">
-          {rows.map((r) => (
-            <CollectionItemCard key={r.id} item={r} />
+          {rows.map((r, i) => (
+            <CollectionItemCard key={r.id} item={r} index={i} />
           ))}
         </ul>
       )}

@@ -29,16 +29,16 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-zinc-50">
+        <h1 className="text-2xl font-bold text-white">
           Welcome back, {displayName.split('@')[0]}
         </h1>
-        <p className="text-sm text-zinc-400 mt-1">
+        <p className="text-sm text-[var(--pv-muted)] mt-1">
           Your Pokémon TCG collection at a glance
         </p>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="pv-stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={<DollarSign className="w-5 h-5" />}
           label="Collection Value"
@@ -72,20 +72,20 @@ export default async function DashboardPage() {
       {/* Placeholder sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Portfolio chart placeholder */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6 space-y-3">
-          <h2 className="text-sm font-semibold text-zinc-300">Portfolio Value Over Time</h2>
-          <div className="h-48 flex items-center justify-center rounded-lg bg-zinc-800/50 border border-dashed border-zinc-700">
-            <p className="text-sm text-zinc-500">
+        <div className="pv-panel p-6 space-y-3">
+          <h2 className="text-sm font-semibold text-[var(--pv-muted)]">Portfolio Value Over Time</h2>
+          <div className="h-48 flex items-center justify-center rounded-xl bg-black/20 border border-dashed">
+            <p className="text-sm text-[var(--pv-muted)]">
               Price history chart — available after Milestone 5
             </p>
           </div>
         </div>
 
         {/* Top cards placeholder */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6 space-y-3">
-          <h2 className="text-sm font-semibold text-zinc-300">Most Valuable Cards</h2>
-          <div className="h-48 flex items-center justify-center rounded-lg bg-zinc-800/50 border border-dashed border-zinc-700">
-            <p className="text-sm text-zinc-500">
+        <div className="pv-panel p-6 space-y-3">
+          <h2 className="text-sm font-semibold text-[var(--pv-muted)]">Most Valuable Cards</h2>
+          <div className="h-48 flex items-center justify-center rounded-xl bg-black/20 border border-dashed">
+            <p className="text-sm text-[var(--pv-muted)]">
               Add cards to your collection to see rankings
             </p>
           </div>
@@ -93,21 +93,21 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent additions placeholder */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6 space-y-3">
-        <h2 className="text-sm font-semibold text-zinc-300">Recent Additions</h2>
+      <div className="pv-panel p-6 space-y-3">
+        <h2 className="text-sm font-semibold text-[var(--pv-muted)]">Recent Additions</h2>
         {itemCount === 0 ? (
           <div className="py-12 flex flex-col items-center gap-3 text-center">
-            <CreditCard className="w-10 h-10 text-zinc-600" />
-            <p className="text-sm text-zinc-400 max-w-xs">
+            <CreditCard className="w-10 h-10 text-[var(--pv-border)]" />
+            <p className="text-sm text-[var(--pv-muted)] max-w-xs">
               Your collection is empty. Use the{' '}
-              <a href="/scanner" className="text-red-400 hover:underline">Scanner</a>{' '}
+              <a href="/scanner" className="text-[var(--pv-yellow)] hover:underline">Scanner</a>{' '}
               or{' '}
-              <a href="/market" className="text-red-400 hover:underline">Market Explorer</a>{' '}
+              <a href="/market" className="text-[var(--pv-yellow)] hover:underline">Market Explorer</a>{' '}
               to add your first card.
             </p>
           </div>
         ) : (
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-[var(--pv-muted)]">
             {itemCount} item{itemCount !== 1 ? 's' : ''} in collection.
             Detailed recent additions list — Milestone 2.
           </p>
@@ -131,16 +131,16 @@ function StatCard({
   accent: 'green' | 'blue' | 'purple' | 'yellow'
 }) {
   const accentClasses = {
-    green: 'bg-green-900/30 text-green-400',
-    blue: 'bg-blue-900/30 text-blue-400',
-    purple: 'bg-purple-900/30 text-purple-400',
-    yellow: 'bg-yellow-900/30 text-yellow-400',
+    green: 'bg-green-500/15 text-green-400',
+    blue: 'bg-blue-500/15 text-blue-400',
+    purple: 'bg-purple-500/15 text-purple-400',
+    yellow: 'bg-yellow-400/15 text-yellow-300',
   }
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 space-y-3">
+    <div className="pv-panel pv-interactive pv-rise p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+        <span className="text-xs font-medium text-[var(--pv-muted)] uppercase tracking-wider">
           {label}
         </span>
         <span className={`p-1.5 rounded-lg ${accentClasses[accent]}`}>
@@ -148,8 +148,8 @@ function StatCard({
         </span>
       </div>
       <div>
-        <p className="text-2xl font-bold text-zinc-50 tabular-nums">{value}</p>
-        <p className="text-xs text-zinc-500 mt-0.5">{sublabel}</p>
+        <p className="text-2xl font-bold text-white tabular-nums">{value}</p>
+        <p className="text-xs text-[var(--pv-muted)] mt-0.5">{sublabel}</p>
       </div>
     </div>
   )

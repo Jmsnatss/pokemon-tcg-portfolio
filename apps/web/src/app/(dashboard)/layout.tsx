@@ -19,6 +19,8 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  return <AppShell>{children}</AppShell>
-}
+  const { data: rows } = await supabase.from('collection_items').select('quantity')
+  const totalCards = (rows ?? []).reduce((n, r: { quantity: number }) => n + r.quantity, 0)
 
+  return <AppShell totalCards={totalCards}>{children}</AppShell>
+}

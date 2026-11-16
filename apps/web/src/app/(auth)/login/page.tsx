@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Pokeball } from '@/components/ui/Pokeball'
 import { LoginForm } from '@/features/auth/LoginForm'
 
 export const metadata: Metadata = {
@@ -7,18 +8,16 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
-      <div className="w-full max-w-sm space-y-8">
+    <div className="pv-app min-h-screen flex items-center justify-center px-4">
+      <div className="pv-panel pv-rise w-full max-w-sm space-y-8 p-8">
         {/* Logo / branding */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-red-600 text-white text-2xl font-bold shadow-lg">
-            PV
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-50">
+          <Pokeball className="pv-pop mx-auto h-16 w-16 drop-shadow-[0_8px_16px_rgba(239,68,68,0.45)]" />
+          <h1 className="text-2xl font-bold tracking-tight text-white">
             PokéVault
           </h1>
-          <p className="text-sm text-zinc-400">
-            Sign in to your collection
+          <p className="text-sm text-[var(--pv-muted)]">
+            Sign in to continue your journey
           </p>
         </div>
 
