@@ -1,6 +1,6 @@
 # docs/PROJECT_CONTEXT.md — PokéVault Architecture & State
 
-**Updated:** Milestone 0 — Foundation COMPLETE (commit `8735fa5`, branch `main`)  
+**Updated:** Milestone 0 — Foundation COMPLETE (commit `9b080eb`, branch `main`)  
 **Git Author:** James Dela Cruz <jrdelacruz@up.edu.ph>  
 **Next milestone:** Milestone 1 — Authentication & Catalog
 
@@ -31,7 +31,7 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
 
 ### Repository structure
 ```
-pokemon-tcg-portfolio/           ← Git repo root (local, commit 8735fa5, branch main)
+pokemon-tcg-portfolio/           ← Git repo root (local, commit 9b080eb, branch main)
 ├── .env.example                 ← All env vars documented
 ├── .gitignore                   ← Node, Python, secrets, models
 ├── .github/workflows/
