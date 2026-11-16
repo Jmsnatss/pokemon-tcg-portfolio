@@ -12,7 +12,6 @@ import {
   LogOut,
   Menu,
   X,
-  Pokeball,
 } from 'lucide-react'
 import { createClientSupabaseClient } from '@/lib/supabase/client'
 

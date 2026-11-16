@@ -1,5 +1,8 @@
-import { createServerClient as _createServerClient } from '@supabase/ssr'
+import { createServerClient as _createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+
+type CookieToSet = { name: string; value: string; options: CookieOptions }
 
 /**
  * Creates a Supabase client for use in Server Components, Route Handlers,
@@ -16,7 +19,7 @@ export async function createServerSupabaseClient() {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieToSet[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
@@ -36,7 +39,6 @@ export async function createServerSupabaseClient() {
  * NEVER expose to the browser or use in client components.
  */
 export function createServiceRoleSupabaseClient() {
-  const { createClient } = require('@supabase/supabase-js')
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

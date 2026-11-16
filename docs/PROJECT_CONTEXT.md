@@ -16,7 +16,7 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
 
 | Milestone | Status | Notes |
 |---|---|---|
-| 0 — Repository & Foundation | ✅ Complete | Full directory structure & all files committed; `pnpm install` pending user execution/approval |
+| 0 — Repository & Foundation | ✅ Complete | Pushed to GitHub; `pnpm install`, type-check, lint, tests (17/17) and build verified |
 | 1 — Authentication & Catalog | ⬜ Pending | Requires Supabase credentials + `pnpm install` |
 | 2 — Collection Management | ⬜ Pending | — |
 | 3 — Pricing & Portfolio | ⬜ Pending | — |
@@ -289,23 +289,21 @@ After `pnpm install` succeeds:
 ## 9. GitHub Remote
 
 **Local repo:** `d:\School Files\Personal Files\Pokemon Scanner\pokemon-tcg-portfolio\`  
-**Branch:** `main`  
-**Remote:** ❌ Not yet connected (no GitHub CLI/integration authenticated)
-
-To connect and push to GitHub:
-```bash
-git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/pokemon-tcg-portfolio.git
-git push -u origin main
-```
+**Branch:** `main` (tracks `origin/main`)  
+**Remote:** https://github.com/Jmsnatss/pokemon-tcg-portfolio.git — ✅ connected and pushed
 
 ---
 
 ## 10. Known Issues / Notes
 
-1. **`apps/web/pnpm-lock.yaml`** will be cleanly regenerated upon executing `pnpm install`.
-2. **Node.js 21.x engine warnings** from some packages (prefer ≥22 LTS). No blocking runtime issues identified.
-3. **Scanner OCR fallback** requires Tesseract system binary — documented in `services/scanner/README`.
-4. **CardCorpus** model availability and license verification will be evaluated prior to Milestone 4.
+1. **Foundation fixes after first install:** removed non-existent `@radix-ui/react-badge` and `@radix-ui/react-skeleton` from `apps/web/package.json` (they broke `pnpm install`); removed unused `Pokeball` icon import (not in lucide-react); typed Supabase cookie handlers; replaced `require()` with an ES import in `server.ts`; renamed `vitest.config.ts` → `vitest.config.mts` (ESM); disabled `cacheComponents`/`partialPrefetching` in `next.config.ts` (dynamic auth-gated routes failed prerender).
+2. **Build needs Supabase env vars** (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) even for `next build`; CI supplies placeholders. Locally, set `.env.local` or placeholders.
+3. **Node 21.x** is used locally (prefer ≥22 LTS).
+4. **Next.js 16 deprecates `middleware.ts`** in favor of `proxy.ts`; migrate in Milestone 1.
+5. **pnpm** ignored esbuild's build script; run `pnpm approve-builds` if esbuild issues appear.
+6. **Scanner OCR fallback** requires the Tesseract system binary.
+7. **CardCorpus** model availability and license must be verified before Milestone 4.
+8. The Python scanner tests have not been run yet.
 
 ---
 
