@@ -58,6 +58,14 @@ export interface TCGdexSetWithCards extends TCGdexSet {
   cards: TCGdexCardSummary[]
 }
 
+export type CardFilters = {
+  name?: string
+  category?: string
+  rarity?: string
+  type?: string
+  setId?: string
+}
+
 class TCGdexClient {
   private async fetch<T>(path: string, lang = DEFAULT_LANG): Promise<T | null> {
     const url = `${BASE_URL}/${lang}/${path}`
@@ -106,6 +114,27 @@ class TCGdexClient {
     if (!query.trim()) return []
     const encoded = encodeURIComponent(query.trim())
     const data = await this.fetch<TCGdexCardSummary[]>(`cards?name=${encoded}`, lang)
+    return data ?? []
+  }
+
+  /**
+   * Search cards with optional server-side filters (exact match for facets).
+   */
+  async searchCardsFiltered(f: CardFilters, lang = DEFAULT_LANG): Promise<TCGdexCardSummary[]> {
+    const p = new URLSearchParams()
+    if (f.name?.trim()) p.set('name', f.name.trim())
+    if (f.category) p.set('category', `eq:${f.category}`)
+    if (f.rarity) p.set('rarity', `eq:${f.rarity}`)
+    if (f.type) p.set('types', `eq:${f.type}`)
+    if (f.setId) p.set('set.id', `eq:${f.setId}`)
+    if ([...p.keys()].length === 0) return []
+    const data = await this.fetch<TCGdexCardSummary[]>(`cards?${p.toString().replace(/\+/g, '%20')}`, lang)
+    return data ?? []
+  }
+
+  /** List facet values: rarities, categories or energy types. */
+  async listFacet(kind: 'rarities' | 'categories' | 'types', lang = DEFAULT_LANG): Promise<string[]> {
+    const data = await this.fetch<string[]>(kind, lang)
     return data ?? []
   }
 

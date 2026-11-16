@@ -24,9 +24,33 @@ export const RAW_CONDITIONS = [
 
 export const CURRENCIES = ['USD', 'PHP', 'EUR', 'JPY'] as const
 
-export const catalogSearchSchema = z.object({
-  q: z.string().trim().min(2, 'Enter at least 2 characters').max(60),
-})
+const optionalText = (max: number) =>
+  z.preprocess((v) => (v === '' || v === null ? undefined : v), z.string().trim().max(max).optional())
+
+export const CATALOG_CATEGORIES = ['Pokemon', 'Trainer', 'Energy'] as const
+export const ENERGY_TYPES = [
+  'Colorless', 'Darkness', 'Dragon', 'Fairy', 'Fighting', 'Fire', 'Grass', 'Lightning', 'Metal', 'Psychic', 'Water',
+] as const
+
+export const catalogSearchSchema = z
+  .object({
+    q: z.preprocess(
+      (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+      z.string().trim().min(2, 'Enter at least 2 characters').max(60).optional()
+    ),
+    category: z.preprocess((v) => (v === '' ? undefined : v), z.enum(CATALOG_CATEGORIES).optional()),
+    rarity: optionalText(40),
+    type: z.preprocess((v) => (v === '' ? undefined : v), z.enum(ENERGY_TYPES).optional()),
+    set: z.preprocess((v) => (v === '' ? undefined : v), z.string().regex(CARD_PROVIDER_ID_REGEX, 'Invalid set').optional()),
+    owned: z.enum(['all', 'owned', 'missing']).default('all'),
+    sort: z.enum(['name', 'number']).default('name'),
+    page: z.coerce.number().int().min(1).max(50).default(1),
+  })
+  .refine((v) => Boolean(v.q || v.rarity || v.type || v.set), {
+    message: 'Search by name, or pick a set, rarity or energy type',
+  })
+
+export type CatalogSearchInput = z.infer<typeof catalogSearchSchema>
 
 export const cardProviderIdSchema = z.string().regex(CARD_PROVIDER_ID_REGEX, 'Invalid card id')
 
@@ -90,4 +114,5 @@ export type CatalogSearchResult = {
   name: string
   imageUrl: string | null
   price?: { amount: number; currency: string; printing: SupportedPrintingType } | null
+  ownedQuantity?: number
 }

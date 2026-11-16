@@ -1,11 +1,11 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { applyCatalogView, PAGE_SIZE } from '@/features/catalog/view'
+import { fetchCollection } from '@/features/collection/list'
 import { fetchPricingByCard } from '@/features/pricing/catalog-prices'
 import { getHeadlineQuote } from '@/features/pricing/tcgplayer'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { tcgdex } from '@/lib/tcgdex/client'
 import { rateLimit } from '@/lib/utils/rate-limit'
 import { catalogSearchSchema, type CatalogSearchResult } from '@/types/catalog'
-
-const MAX_RESULTS = 30
 
 export async function GET(request: Request): Promise<Response> {
   const supabase = await createServerSupabaseClient()
@@ -16,17 +16,29 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json({ error: 'Too many requests' }, { status: 429 })
   }
 
-  const parsed = catalogSearchSchema.safeParse({
-    q: new URL(request.url).searchParams.get('q') ?? '',
-  })
+  const params = Object.fromEntries(new URL(request.url).searchParams)
+  const parsed = catalogSearchSchema.safeParse(params)
   if (!parsed.success) {
     return Response.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
+  const f = parsed.data
 
-  const results = await tcgdex.searchCards(parsed.data.q)
-  const page = results.slice(0, MAX_RESULTS)
-  const pricing = await fetchPricingByCard(page.map((c) => c.id), 10)
-  const data: CatalogSearchResult[] = page.map((c) => {
+  const [matches, collection] = await Promise.all([
+    tcgdex.searchCardsFiltered({ name: f.q, category: f.category, rarity: f.rarity, type: f.type, setId: f.set }),
+    fetchCollection(supabase),
+  ])
+
+  const ownedQty = new Map<string, number>()
+  for (const r of collection) {
+    const id = r.card_variants?.cards?.provider_id
+    if (id) ownedQty.set(id, (ownedQty.get(id) ?? 0) + r.quantity)
+  }
+
+  const { items, total, hasMore } = applyCatalogView(matches, ownedQty, { owned: f.owned, sort: f.sort, page: f.page })
+  const pageItems = items.slice((f.page - 1) * PAGE_SIZE)
+  const pricing = await fetchPricingByCard(pageItems.map((c) => c.id), 10)
+
+  const data: CatalogSearchResult[] = pageItems.map((c) => {
     const headline = getHeadlineQuote(pricing.get(c.id))
     return {
       id: c.id,
@@ -36,8 +48,9 @@ export async function GET(request: Request): Promise<Response> {
       price: headline
         ? { amount: headline.quote.price, currency: headline.quote.currency, printing: headline.printing }
         : null,
+      ownedQuantity: ownedQty.get(c.id),
     }
   })
 
-  return Response.json({ data, total: results.length })
+  return Response.json({ data, total, hasMore, page: f.page, pageSize: PAGE_SIZE })
 }

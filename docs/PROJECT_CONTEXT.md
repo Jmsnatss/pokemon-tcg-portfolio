@@ -323,3 +323,6 @@ After `pnpm install` succeeds:
 ---
 
 *Last updated: 2026-11-16 — Milestone 0 complete*
+
+## Market Explorer filters
+Sidebar filters (category, set, rarity, energy type, portfolio status, price range, sort) with Load more. Category/rarity/set/type are server-side TCGdex filters; price range and price sort apply only to loaded cards because prices are fetched per page. A name, set, rarity or type is required (category alone matches ~20k cards).
