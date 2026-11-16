@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { CollectionRow } from '@/features/collection/list'
-import { convert, valueCollection } from './valuation'
+import { convert, totalCost, valueCollection } from './valuation'
 
 const row = (id: string, over: Partial<CollectionRow> = {}, printing = 'standard', providerId = 'a-1'): CollectionRow => ({
   id,
+  user_id: 'u1',
   card_variant_id: 'v-' + id,
   quantity: 1,
   condition: 'near_mint',
@@ -99,5 +100,20 @@ describe('valueCollection graded slabs', () => {
     const v = valueCollection([slab], pricing, null, 'USD', { quotes: new Map(), unavailableReason: 'Not fetched yet' })
     expect(v.totalValue).toBeNull()
     expect(v.items.get('s')?.result).toEqual({ status: 'unavailable', reason: 'Not fetched yet' })
+  })
+})
+
+describe('totalCost', () => {
+  it('sums purchase costs across currencies, skipping unpriced entries', () => {
+    const rows = [
+      row('1', { purchase_price: '10', purchase_currency: 'USD', quantity: 2 }),
+      row('2', { purchase_price: '100', purchase_currency: 'PHP' }),
+      row('3'),
+    ]
+    expect(totalCost(rows, { PHP: 50 }, 'USD')).toBe(22)
+  })
+  it('is null when nothing has a cost or the rate is missing', () => {
+    expect(totalCost([row('1')], null, 'USD')).toBeNull()
+    expect(totalCost([row('1', { purchase_price: '5', purchase_currency: 'PHP' })], null, 'USD')).toBeNull()
   })
 })

@@ -114,3 +114,18 @@ export function valueCollection(
     latestObservedAt: latest,
   }
 }
+
+/** Total purchase cost across all entries that have a price, converted to one currency. */
+export function totalCost(rows: CollectionRow[], usdRates: UsdRates | null, currency: string): number | null {
+  let cost = 0
+  let any = false
+  for (const r of rows) {
+    if (r.purchase_price == null) continue
+    const c = convert(Number(r.purchase_price) * r.quantity, r.purchase_currency ?? 'USD', currency, usdRates)
+    if (c !== null) {
+      cost += c
+      any = true
+    }
+  }
+  return any ? cost : null
+}

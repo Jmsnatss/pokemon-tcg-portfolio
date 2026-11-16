@@ -43,6 +43,7 @@ export async function proxy(request: NextRequest) {
   const isPublicPath =
     pathname.startsWith('/login') ||
     pathname.startsWith('/api/health') ||
+    pathname.startsWith('/api/cron') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon')
 

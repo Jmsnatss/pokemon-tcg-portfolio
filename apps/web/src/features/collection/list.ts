@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type CollectionRow = {
   id: string
+  user_id: string
   card_variant_id: string
   quantity: number
   condition: string
@@ -34,7 +35,7 @@ export type CollectionFilters = {
 }
 
 const SELECT = `
-  id, card_variant_id, quantity, condition, is_graded, grading_company, grade, cert_number,
+  id, user_id, card_variant_id, quantity, condition, is_graded, grading_company, grade, cert_number,
   purchase_price, purchase_currency, purchase_date, notes, created_at,
   card_variants (
     printing_type,
@@ -43,11 +44,10 @@ const SELECT = `
 `
 
 /** Fetches the signed-in user's items. RLS restricts rows to the owner. */
-export async function fetchCollection(supabase: SupabaseClient): Promise<CollectionRow[]> {
-  const { data, error } = await supabase
-    .from('collection_items')
-    .select(SELECT)
-    .order('created_at', { ascending: false })
+export async function fetchCollection(supabase: SupabaseClient, userId?: string): Promise<CollectionRow[]> {
+  let query = supabase.from('collection_items').select(SELECT).order('created_at', { ascending: false })
+  if (userId) query = query.eq('user_id', userId)
+  const { data, error } = await query
   if (error) throw new Error(`collection fetch failed: ${error.message}`)
   return (data ?? []) as unknown as CollectionRow[]
 }

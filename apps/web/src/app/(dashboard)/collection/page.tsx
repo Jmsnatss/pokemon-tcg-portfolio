@@ -4,14 +4,10 @@ import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { Field } from '@/components/ui/Field'
 import { Pokeball } from '@/components/ui/Pokeball'
 import { CollectionItemCard, type TilePrice } from '@/features/collection/CollectionItemCard'
-import { fetchCollection, filterCollection, type CollectionFilters } from '@/features/collection/list'
-import { valueCollection } from '@/features/portfolio/valuation'
-import { fetchPricingByCard } from '@/features/pricing/catalog-prices'
+import { filterCollection, type CollectionFilters } from '@/features/collection/list'
+import { loadPortfolio } from '@/features/portfolio/load'
 import { RefreshGradedButton } from '@/features/pricing/RefreshGradedButton'
-import { loadCachedGradedQuotes } from '@/features/pricing/sync-graded'
 import { PRICE_SOURCE } from '@/features/pricing/tcgplayer'
-import { isJustTcgConfigured } from '@/lib/pricing/justtcg'
-import { getLatestRates } from '@/lib/currency/frankfurter'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
 import { CURRENCIES } from '@/types/catalog'
@@ -38,27 +34,10 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
   const { data: profile } = await supabase.from('profiles').select('preferred_currency').eq('id', user!.id).single()
   const currency = pick(sp.cur, CURRENCIES, pick(profile?.preferred_currency, CURRENCIES, 'USD'))
 
-  const all = await fetchCollection(supabase)
+  const portfolio = await loadPortfolio(supabase, currency)
+  const { rows: all, valuation, fx, fxMissing, justTcg, hasGraded } = portfolio
   const rows = filterCollection(all, filters)
   const totalCards = all.reduce((n, r) => n + r.quantity, 0)
-
-  const providerIds = all.flatMap((r) => (r.card_variants?.cards ? [r.card_variants.cards.provider_id] : []))
-  const [pricing, fx] = await Promise.all([
-    fetchPricingByCard(providerIds),
-    currency === 'USD' ? Promise.resolve(null) : getLatestRates('USD'),
-  ])
-  const usdRates = fx?.rates ?? null
-  const fxMissing = currency !== 'USD' && !usdRates
-  const justTcg = isJustTcgConfigured()
-  const hasGraded = all.some((r) => r.is_graded)
-  const cached = await loadCachedGradedQuotes(
-    supabase,
-    all.filter((r) => r.is_graded).map((r) => r.card_variant_id)
-  )
-  const valuation = valueCollection(all, pricing, usdRates, currency, {
-    quotes: cached.quotes,
-    unavailableReason: justTcg ? 'Not fetched yet: use "Refresh graded prices"' : 'Graded prices need a free JustTCG API key',
-  })
 
   const tilePrice = (id: string): TilePrice => {
     const v = valuation.items.get(id)

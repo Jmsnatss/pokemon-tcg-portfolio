@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PortfolioChart } from '@/components/charts/PortfolioChart'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import { getAvailablePrintings } from '@/features/collection/variants'
 import { AddToCollectionForm } from '@/features/collection/AddToCollectionForm'
@@ -29,6 +31,21 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
 
   const card = await tcgdex.getCard(parsed.data)
   if (!card) notFound()
+
+  const supabase = await createServerSupabaseClient()
+  const { data: historyRows } = await supabase
+    .from('price_history')
+    .select('price, observed_at, card_variants!inner(printing_type, grading_company, cards!inner(provider_id))')
+    .eq('card_variants.cards.provider_id', card.id)
+    .is('card_variants.grading_company', null)
+    .order('observed_at', { ascending: true })
+    .limit(1000)
+  const history = new Map<string, { date: string; value: number }[]>()
+  for (const h of (historyRows ?? []) as unknown as { price: string; observed_at: string; card_variants: { printing_type: string } }[]) {
+    const list = history.get(h.card_variants.printing_type) ?? []
+    list.push({ date: h.observed_at.slice(0, 10), value: Number(h.price) })
+    history.set(h.card_variants.printing_type, list)
+  }
 
   const imageUrl = tcgdex.getCardImageUrl(card.image, 'high')
   const printings = getAvailablePrintings(card)
@@ -126,6 +143,26 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
               Near Mint market price · {PRICE_SOURCE}
               {card.pricing?.tcgplayer?.updated ? ` · updated ${formatDate(card.pricing.tcgplayer.updated)}` : ''}
             </p>
+          </section>
+
+          <section className="pv-panel space-y-3 p-5">
+            <h2 className="text-base font-bold text-white">Price history</h2>
+            {[...history.entries()].filter(([, pts]) => pts.length >= 2).length === 0 ? (
+              <p className="text-sm text-[var(--pv-muted)]">
+                History starts when this card is tracked: add it to your collection and the daily sync records a price each day.
+                {history.size > 0 ? ' Only one data point so far.' : ''}
+              </p>
+            ) : (
+              [...history.entries()]
+                .filter(([, pts]) => pts.length >= 2)
+                .map(([printing, pts]) => (
+                  <div key={printing} className="space-y-1">
+                    <p className="text-xs font-semibold text-[var(--pv-muted)]">{PRINTING_LABELS[printing as keyof typeof PRINTING_LABELS] ?? printing}</p>
+                    <PortfolioChart data={pts} label={`${printing} price history`} height={160} />
+                  </div>
+                ))
+            )}
+            <p className="text-[11px] text-[#5b6385]">Recorded by this app from the day tracking began; USD, Near Mint market.</p>
           </section>
         </div>
       </div>
