@@ -12,6 +12,7 @@ export type MarketQuote = {
   observedAt: string | null
   /** The TCGplayer printing key that was matched, e.g. "reverse-holofoil". */
   matchedKey: string
+  source: string
 }
 
 export type QuoteResult =
@@ -60,6 +61,7 @@ export function getMarketQuote(pricing: Pricing | undefined, printing: Supported
       currency: tcg.unit ?? 'USD',
       observedAt: tcg.updated ?? null,
       matchedKey: key,
+      source: PRICE_SOURCE,
     },
   }
 }

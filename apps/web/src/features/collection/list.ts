@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type CollectionRow = {
   id: string
+  card_variant_id: string
   quantity: number
   condition: string
   is_graded: boolean
@@ -33,7 +34,7 @@ export type CollectionFilters = {
 }
 
 const SELECT = `
-  id, quantity, condition, is_graded, grading_company, grade, cert_number,
+  id, card_variant_id, quantity, condition, is_graded, grading_company, grade, cert_number,
   purchase_price, purchase_currency, purchase_date, notes, created_at,
   card_variants (
     printing_type,

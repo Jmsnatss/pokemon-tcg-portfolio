@@ -35,6 +35,7 @@ export interface TCGdexCard {
     firstEdition?: boolean
     wPromo?: boolean
   }
+  variants_detailed?: { type?: string; thirdParty?: { tcgplayer?: number | null } }[]
   pricing?: {
     tcgplayer?: {
       unit?: string

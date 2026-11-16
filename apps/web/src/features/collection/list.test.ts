@@ -4,6 +4,7 @@ import { addToCollectionSchema, updateCollectionItemSchema } from '@/types/catal
 
 const row = (over: Partial<CollectionRow> & { name?: string; set?: string }): CollectionRow => ({
   id: over.id ?? 'x',
+  card_variant_id: 'v-' + (over.id ?? 'x'),
   quantity: 1,
   condition: 'near_mint',
   is_graded: false,

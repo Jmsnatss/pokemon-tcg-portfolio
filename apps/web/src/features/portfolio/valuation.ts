@@ -1,4 +1,5 @@
 import type { CollectionRow } from '@/features/collection/list'
+import { GRADED_SOURCE, type GradedQuote } from '@/features/pricing/graded'
 import { priceItem, type ItemPriceResult } from '@/features/pricing/tcgplayer'
 import type { TCGdexCard } from '@/lib/tcgdex/client'
 import type { SupportedPrintingType } from '@/types/catalog'
@@ -41,7 +42,8 @@ export function valueCollection(
   rows: CollectionRow[],
   pricingByCard: Map<string, Pricing>,
   usdRates: UsdRates | null,
-  displayCurrency: string
+  displayCurrency: string,
+  graded: { quotes: Map<string, GradedQuote>; unavailableReason: string } = { quotes: new Map(), unavailableReason: 'No graded price available' }
 ): PortfolioValuation {
   const items = new Map<string, ItemValuation>()
   let total = 0
@@ -53,7 +55,24 @@ export function valueCollection(
 
   for (const r of rows) {
     const card = r.card_variants?.cards
-    const result: ItemPriceResult = card
+    const gradedQuote = r.is_graded ? graded.quotes.get(r.card_variant_id) : undefined
+    const result: ItemPriceResult = r.is_graded
+      ? gradedQuote
+        ? {
+            status: 'priced',
+            quote: {
+              price: gradedQuote.price,
+              low: null,
+              mid: null,
+              high: null,
+              currency: gradedQuote.currency,
+              observedAt: gradedQuote.observedAt,
+              matchedKey: 'graded',
+              source: GRADED_SOURCE,
+            },
+          }
+        : { status: 'unavailable', reason: graded.unavailableReason }
+      : card
       ? priceItem(pricingByCard.get(card.provider_id), {
           printing: (r.card_variants?.printing_type ?? 'standard') as SupportedPrintingType,
           isGraded: r.is_graded,

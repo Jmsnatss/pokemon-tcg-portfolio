@@ -4,6 +4,7 @@ import { convert, valueCollection } from './valuation'
 
 const row = (id: string, over: Partial<CollectionRow> = {}, printing = 'standard', providerId = 'a-1'): CollectionRow => ({
   id,
+  card_variant_id: 'v-' + id,
   quantity: 1,
   condition: 'near_mint',
   is_graded: false,
@@ -80,5 +81,23 @@ describe('valueCollection', () => {
   it('yields null totals when FX rate is missing for the display currency', () => {
     const v = valueCollection([row('1')], pricing, null, 'PHP')
     expect(v.totalValue).toBeNull()
+  })
+})
+
+describe('valueCollection graded slabs', () => {
+  const slab = row('s', { is_graded: true, grading_company: 'PSA', grade: 10, quantity: 2 })
+
+  it('values slabs from cached recent-sale quotes', () => {
+    const quotes = new Map([['v-s', { price: 100, currency: 'USD', observedAt: '2026-11-10T00:00:00Z' }]])
+    const v = valueCollection([slab], pricing, null, 'USD', { quotes, unavailableReason: 'x' })
+    expect(v.totalValue).toBe(200)
+    const r = v.items.get('s')?.result
+    expect(r?.status === 'priced' && r.quote.source).toContain('JustTCG')
+  })
+
+  it('shows the reason when no cached quote exists', () => {
+    const v = valueCollection([slab], pricing, null, 'USD', { quotes: new Map(), unavailableReason: 'Not fetched yet' })
+    expect(v.totalValue).toBeNull()
+    expect(v.items.get('s')?.result).toEqual({ status: 'unavailable', reason: 'Not fetched yet' })
   })
 })

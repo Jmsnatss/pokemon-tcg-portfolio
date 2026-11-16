@@ -7,7 +7,10 @@ import { CollectionItemCard, type TilePrice } from '@/features/collection/Collec
 import { fetchCollection, filterCollection, type CollectionFilters } from '@/features/collection/list'
 import { valueCollection } from '@/features/portfolio/valuation'
 import { fetchPricingByCard } from '@/features/pricing/catalog-prices'
+import { RefreshGradedButton } from '@/features/pricing/RefreshGradedButton'
+import { loadCachedGradedQuotes } from '@/features/pricing/sync-graded'
 import { PRICE_SOURCE } from '@/features/pricing/tcgplayer'
+import { isJustTcgConfigured } from '@/lib/pricing/justtcg'
 import { getLatestRates } from '@/lib/currency/frankfurter'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
@@ -46,7 +49,16 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
   ])
   const usdRates = fx?.rates ?? null
   const fxMissing = currency !== 'USD' && !usdRates
-  const valuation = valueCollection(all, pricing, usdRates, currency)
+  const justTcg = isJustTcgConfigured()
+  const hasGraded = all.some((r) => r.is_graded)
+  const cached = await loadCachedGradedQuotes(
+    supabase,
+    all.filter((r) => r.is_graded).map((r) => r.card_variant_id)
+  )
+  const valuation = valueCollection(all, pricing, usdRates, currency, {
+    quotes: cached.quotes,
+    unavailableReason: justTcg ? 'Not fetched yet: use "Refresh graded prices"' : 'Graded prices need a free JustTCG API key',
+  })
 
   const tilePrice = (id: string): TilePrice => {
     const v = valuation.items.get(id)
@@ -59,7 +71,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
       unit: v.unit,
       line: v.line,
       currency,
-      source: PRICE_SOURCE,
+      source: v.result.quote.source,
       observedAt: v.result.quote.observedAt,
       note: v.result.status === 'reference' ? v.result.note : null,
     }
@@ -107,6 +119,7 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
             )}
           </div>
 
+          <div className="flex flex-col items-end gap-3">
           <div className="flex gap-1 rounded-xl bg-black/30 p-1" role="group" aria-label="Display currency">
             {CURRENCIES.map((c) => (
               <Link
@@ -121,15 +134,17 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
               </Link>
             ))}
           </div>
+          {hasGraded && <RefreshGradedButton configured={justTcg} />}
+          </div>
         </div>
 
         {all.length > 0 && (
           <p className="mt-4 text-xs leading-relaxed text-[var(--pv-muted)]">
             {totalCards} card{totalCards === 1 ? '' : 's'} in {all.length} entr{all.length === 1 ? 'y' : 'ies'} ·{' '}
             {valuation.pricedEntries} of {all.length} priced
-            {valuation.latestObservedAt && ` · prices as of ${formatDate(valuation.latestObservedAt)}`}. Source: {PRICE_SOURCE}
-            {currency !== 'USD' && fx ? `; FX: ECB via Frankfurter, ${formatDate(fx.date)}` : ''}. Only Near Mint raw cards with an
-            exact printing match are counted; graded slabs and other conditions aren&apos;t valued.
+            {valuation.latestObservedAt && ` · prices as of ${formatDate(valuation.latestObservedAt)}`}. Sources: {PRICE_SOURCE}{hasGraded ? ', JustTCG' : ''}
+            {currency !== 'USD' && fx ? `; FX: ECB via Frankfurter, ${formatDate(fx.date)}` : ''}. Raw cards are valued at Near Mint with an exact printing match only. Graded slabs use the
+            most recent JustTCG sale of that exact grade, when one exists. Other conditions aren&apos;t valued.
           </p>
         )}
       </section>
