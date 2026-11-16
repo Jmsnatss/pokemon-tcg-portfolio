@@ -5,7 +5,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { Pokeball } from '@/components/ui/Pokeball'
-import type { CatalogSearchResult } from '@/types/catalog'
+import { formatCurrency } from '@/lib/utils/format'
+import { PRINTING_LABELS, type CatalogSearchResult } from '@/types/catalog'
 
 type State =
   | { status: 'idle' }
@@ -81,6 +82,7 @@ export function CatalogSearch() {
             {state.total > state.results.length
               ? `Showing ${state.results.length} of ${state.total} matches. Refine your search to narrow results.`
               : `${state.total} match${state.total === 1 ? '' : 'es'}`}
+            {' '}· Prices: TCGplayer (via TCGdex), Near Mint market
           </p>
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {state.results.map((card, i) => (
@@ -99,6 +101,18 @@ export function CatalogSearch() {
                   <p className="truncate text-xs text-[var(--pv-muted)]">
                     {card.id} · #{card.localId}
                   </p>
+                  <div className="mt-2 border-t pt-2">
+                    {card.price ? (
+                      <>
+                        <p className="text-lg font-bold tabular-nums text-white">
+                          {formatCurrency(card.price.amount, card.price.currency)}
+                        </p>
+                        <p className="text-[11px] text-[#5b6385]">{PRINTING_LABELS[card.price.printing]} · NM market</p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-[#5b6385]">Price unavailable</p>
+                    )}
+                  </div>
                 </Link>
               </li>
             ))}

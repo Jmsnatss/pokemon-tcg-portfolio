@@ -1,21 +1,23 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { Field } from '@/components/ui/Field'
 import { Pokeball } from '@/components/ui/Pokeball'
-import { CollectionItemCard } from '@/features/collection/CollectionItemCard'
-import {
-  fetchCollection,
-  filterCollection,
-  totalCostByCurrency,
-  type CollectionFilters,
-} from '@/features/collection/list'
+import { CollectionItemCard, type TilePrice } from '@/features/collection/CollectionItemCard'
+import { fetchCollection, filterCollection, type CollectionFilters } from '@/features/collection/list'
+import { valueCollection } from '@/features/portfolio/valuation'
+import { fetchPricingByCard } from '@/features/pricing/catalog-prices'
+import { PRICE_SOURCE } from '@/features/pricing/tcgplayer'
+import { getLatestRates } from '@/lib/currency/frankfurter'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { formatCurrency, formatDate } from '@/lib/utils/format'
+import { CURRENCIES } from '@/types/catalog'
 
 export const metadata: Metadata = {
   title: 'Collection',
 }
 
-type SearchParams = Promise<{ q?: string; type?: string; sort?: string }>
+type SearchParams = Promise<{ q?: string; type?: string; sort?: string; cur?: string }>
 
 const pick = <T extends string>(v: string | undefined, allowed: readonly T[], fallback: T): T =>
   allowed.includes(v as T) ? (v as T) : fallback
@@ -29,24 +31,111 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
   }
 
   const supabase = await createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('profiles').select('preferred_currency').eq('id', user!.id).single()
+  const currency = pick(sp.cur, CURRENCIES, pick(profile?.preferred_currency, CURRENCIES, 'USD'))
+
   const all = await fetchCollection(supabase)
   const rows = filterCollection(all, filters)
-  const totalCards = rows.reduce((n, r) => n + r.quantity, 0)
-  const costs = Object.entries(totalCostByCurrency(rows))
+  const totalCards = all.reduce((n, r) => n + r.quantity, 0)
+
+  const providerIds = all.flatMap((r) => (r.card_variants?.cards ? [r.card_variants.cards.provider_id] : []))
+  const [pricing, fx] = await Promise.all([
+    fetchPricingByCard(providerIds),
+    currency === 'USD' ? Promise.resolve(null) : getLatestRates('USD'),
+  ])
+  const usdRates = fx?.rates ?? null
+  const fxMissing = currency !== 'USD' && !usdRates
+  const valuation = valueCollection(all, pricing, usdRates, currency)
+
+  const tilePrice = (id: string): TilePrice => {
+    const v = valuation.items.get(id)
+    if (!v || v.result.status === 'unavailable' || v.unit === null) {
+      const reason = v?.result.status === 'unavailable' ? v.result.reason : fxMissing ? 'Exchange rate unavailable' : 'No price data'
+      return { status: 'unavailable', unit: null, line: null, currency, source: PRICE_SOURCE, observedAt: null, note: reason }
+    }
+    return {
+      status: v.result.status,
+      unit: v.unit,
+      line: v.line,
+      currency,
+      source: PRICE_SOURCE,
+      observedAt: v.result.quote.observedAt,
+      note: v.result.status === 'reference' ? v.result.note : null,
+    }
+  }
+
+  const qs = (over: Record<string, string>): string => {
+    const p = new URLSearchParams()
+    if (filters.q) p.set('q', filters.q)
+    if (filters.type !== 'all') p.set('type', filters.type!)
+    if (filters.sort !== 'newest') p.set('sort', filters.sort!)
+    p.set('cur', currency)
+    Object.entries(over).forEach(([k, v]) => p.set(k, v))
+    return `?${p.toString()}`
+  }
+
+  const up = (valuation.gain ?? 0) >= 0
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Collection</h1>
-        <p className="text-sm text-[var(--pv-muted)] mt-1">
-          {all.length === 0
-            ? 'Your collection is empty.'
-            : `${totalCards} card${totalCards === 1 ? '' : 's'} in ${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}` +
-              (costs.length ? ` · cost basis ${costs.map(([c, v]) => `${v.toFixed(2)} ${c}`).join(' + ')}` : '')}
-        </p>
-      </div>
+      <section className="pv-panel relative overflow-hidden p-6 md:p-8">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[var(--pv-red)]/10 blur-3xl" />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="pv-label !mb-1">Portfolio value</p>
+            {all.length === 0 ? (
+              <p className="text-3xl font-bold text-white">Your collection is empty</p>
+            ) : valuation.totalValue !== null ? (
+              <p className="text-5xl font-extrabold tracking-tight text-white tabular-nums md:text-6xl">
+                {formatCurrency(valuation.totalValue, currency)}
+              </p>
+            ) : (
+              <p className="text-3xl font-bold text-[var(--pv-muted)]">
+                {fxMissing ? 'Exchange rate unavailable' : 'No priced cards yet'}
+              </p>
+            )}
+            {valuation.gain !== null && (
+              <p className={`mt-2 inline-flex items-center gap-1 text-sm font-semibold tabular-nums ${up ? 'text-green-400' : 'text-red-400'}`}>
+                {up ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                {formatCurrency(valuation.gain, currency)}
+                {valuation.gainPercent !== null && ` (${valuation.gainPercent >= 0 ? '+' : ''}${valuation.gainPercent.toFixed(1)}%)`}
+                <span className="ml-1 font-normal text-[var(--pv-muted)]">
+                  vs. {formatCurrency(valuation.costBasis, currency)} paid on priced cards
+                </span>
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-1 rounded-xl bg-black/30 p-1" role="group" aria-label="Display currency">
+            {CURRENCIES.map((c) => (
+              <Link
+                key={c}
+                href={qs({ cur: c })}
+                aria-current={c === currency ? 'true' : undefined}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  c === currency ? 'bg-[var(--pv-yellow)] text-black' : 'text-[var(--pv-muted)] hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                {c}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {all.length > 0 && (
+          <p className="mt-4 text-xs leading-relaxed text-[var(--pv-muted)]">
+            {totalCards} card{totalCards === 1 ? '' : 's'} in {all.length} entr{all.length === 1 ? 'y' : 'ies'} ·{' '}
+            {valuation.pricedEntries} of {all.length} priced
+            {valuation.latestObservedAt && ` · prices as of ${formatDate(valuation.latestObservedAt)}`}. Source: {PRICE_SOURCE}
+            {currency !== 'USD' && fx ? `; FX: ECB via Frankfurter, ${formatDate(fx.date)}` : ''}. Only Near Mint raw cards with an
+            exact printing match are counted; graded slabs and other conditions aren&apos;t valued.
+          </p>
+        )}
+      </section>
 
       <form method="get" className="pv-panel grid gap-3 p-4 sm:grid-cols-[1fr_150px_150px_auto] sm:items-end">
+        <input type="hidden" name="cur" value={currency} />
         <Field label="Search">
           <input name="q" defaultValue={filters.q} placeholder="Card name or set" className="pv-control" />
         </Field>
@@ -76,9 +165,9 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
       ) : rows.length === 0 ? (
         <p className="text-sm text-[var(--pv-muted)]">No entries match your filters.</p>
       ) : (
-        <ul className="grid gap-4 lg:grid-cols-2">
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]">
           {rows.map((r, i) => (
-            <CollectionItemCard key={r.id} item={r} index={i} />
+            <CollectionItemCard key={r.id} item={r} price={tilePrice(r.id)} index={i} />
           ))}
         </ul>
       )}

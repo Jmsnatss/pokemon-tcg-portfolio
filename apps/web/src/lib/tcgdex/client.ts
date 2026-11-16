@@ -35,6 +35,13 @@ export interface TCGdexCard {
     firstEdition?: boolean
     wPromo?: boolean
   }
+  pricing?: {
+    tcgplayer?: {
+      unit?: string
+      updated?: string
+      [printing: string]: unknown
+    }
+  }
   // Attacks, abilities, etc. available in full response
   [key: string]: unknown
 }

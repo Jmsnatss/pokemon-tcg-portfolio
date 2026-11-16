@@ -5,6 +5,9 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { getAvailablePrintings } from '@/features/collection/variants'
 import { AddToCollectionForm } from '@/features/collection/AddToCollectionForm'
+import { getMarketQuote, PRICE_SOURCE } from '@/features/pricing/tcgplayer'
+import { formatCurrency, formatDate } from '@/lib/utils/format'
+import { PRINTING_LABELS } from '@/types/catalog'
 import { tcgdex } from '@/lib/tcgdex/client'
 import { cardProviderIdSchema } from '@/types/catalog'
 
@@ -91,7 +94,39 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             <AddToCollectionForm providerId={card.id} printings={printings} />
           </div>
 
-          <p className="text-xs text-[var(--pv-muted)]">Price: unavailable until a pricing provider is connected (Milestone 3).</p>
+          <section className="pv-panel space-y-3 p-5">
+            <h2 className="text-base font-bold text-white">Market prices</h2>
+            {printings.length === 0 ? (
+              <p className="text-sm text-[var(--pv-muted)]">No printing data, so no exact price can be shown.</p>
+            ) : (
+              <ul className="divide-y divide-[var(--pv-border)]">
+                {printings.map((p) => {
+                  const q = getMarketQuote(card.pricing, p)
+                  return (
+                    <li key={p} className="flex items-center justify-between gap-4 py-2.5">
+                      <span className="text-sm text-[#cdd2e6]">{PRINTING_LABELS[p]}</span>
+                      {q.available ? (
+                        <span className="text-right">
+                          <span className="block text-lg font-bold tabular-nums text-white">
+                            {formatCurrency(q.quote.price, q.quote.currency)}
+                          </span>
+                          <span className="block text-[11px] tabular-nums text-[var(--pv-muted)]">
+                            Low {formatCurrency(q.quote.low, q.quote.currency)} · High {formatCurrency(q.quote.high, q.quote.currency)}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-sm text-[var(--pv-muted)]">Unavailable</span>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            <p className="text-[11px] text-[#5b6385]">
+              Near Mint market price · {PRICE_SOURCE}
+              {card.pricing?.tcgplayer?.updated ? ` · updated ${formatDate(card.pricing.tcgplayer.updated)}` : ''}
+            </p>
+          </section>
         </div>
       </div>
     </div>

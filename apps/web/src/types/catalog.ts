@@ -89,4 +89,5 @@ export type CatalogSearchResult = {
   localId: string
   name: string
   imageUrl: string | null
+  price?: { amount: number; currency: string; printing: SupportedPrintingType } | null
 }

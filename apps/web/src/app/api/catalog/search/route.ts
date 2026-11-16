@@ -1,9 +1,11 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { fetchPricingByCard } from '@/features/pricing/catalog-prices'
+import { getHeadlineQuote } from '@/features/pricing/tcgplayer'
 import { tcgdex } from '@/lib/tcgdex/client'
 import { rateLimit } from '@/lib/utils/rate-limit'
 import { catalogSearchSchema, type CatalogSearchResult } from '@/types/catalog'
 
-const MAX_RESULTS = 60
+const MAX_RESULTS = 30
 
 export async function GET(request: Request): Promise<Response> {
   const supabase = await createServerSupabaseClient()
@@ -22,12 +24,20 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const results = await tcgdex.searchCards(parsed.data.q)
-  const data: CatalogSearchResult[] = results.slice(0, MAX_RESULTS).map((c) => ({
-    id: c.id,
-    localId: c.localId,
-    name: c.name,
-    imageUrl: tcgdex.getCardImageUrl(c.image, 'low'),
-  }))
+  const page = results.slice(0, MAX_RESULTS)
+  const pricing = await fetchPricingByCard(page.map((c) => c.id), 10)
+  const data: CatalogSearchResult[] = page.map((c) => {
+    const headline = getHeadlineQuote(pricing.get(c.id))
+    return {
+      id: c.id,
+      localId: c.localId,
+      name: c.name,
+      imageUrl: tcgdex.getCardImageUrl(c.image, 'low'),
+      price: headline
+        ? { amount: headline.quote.price, currency: headline.quote.currency, printing: headline.printing }
+        : null,
+    }
+  })
 
   return Response.json({ data, total: results.length })
 }

@@ -19,7 +19,7 @@ PokéVault is a personal, zero-cost Pokémon TCG collection manager and portfoli
 | 0 — Repository & Foundation | ✅ Complete | Pushed to GitHub; `pnpm install`, type-check, lint, tests (17/17) and build verified |
 | 1 — Authentication & Catalog | ✅ Complete | Login, TCGdex search, card detail, add-to-collection verified in browser. shadcn/ui deferred (plain Tailwind used) |
 | 2 — Collection Management | 🟡 Built, awaiting browser verification | Collection page (search/filter/sort, cost basis per currency), edit/delete, graded slabs (PSA/BGS/CGC, user-entered grades only). Sealed products not yet done |
-| 3 — Pricing & Portfolio | ⬜ Pending | — |
+| 3 — Pricing & Portfolio | 🟡 Started | Free pricing via TCGplayer data in TCGdex (USD, Near Mint market, exact printing only). Collection shows portfolio value with FX (Frankfurter), per-card prices, gain/loss. Pending: JustTCG, graded prices, DB price/FX caching, snapshots |
 | 4 — Card Scanning | ⬜ Pending | — |
 | 5 — Historical Pricing | ⬜ Pending | — |
 | 6 — Advanced Features | ⬜ Pending | — |
