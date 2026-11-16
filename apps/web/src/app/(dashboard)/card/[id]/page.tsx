@@ -7,7 +7,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import { getAvailablePrintings } from '@/features/collection/variants'
 import { AddToCollectionForm } from '@/features/collection/AddToCollectionForm'
-import { getMarketQuote, PRICE_SOURCE } from '@/features/pricing/tcgplayer'
+import { alignPricing, getMarketQuote, PRICE_SOURCE } from '@/features/pricing/tcgplayer'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
 import { PRINTING_LABELS } from '@/types/catalog'
 import { tcgdex } from '@/lib/tcgdex/client'
@@ -49,6 +49,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
 
   const imageUrl = tcgdex.getCardImageUrl(card.image, 'high')
   const printings = getAvailablePrintings(card)
+  const pricing = alignPricing(card)
   const facts: [string, string | null][] = [
     ['Set', card.set?.name ?? null],
     ['Number', card.localId],
@@ -118,7 +119,7 @@ export default async function CardDetailPage({ params }: CardDetailPageProps) {
             ) : (
               <ul className="divide-y divide-[var(--pv-border)]">
                 {printings.map((p) => {
-                  const q = getMarketQuote(card.pricing, p)
+                  const q = getMarketQuote(pricing, p)
                   return (
                     <li key={p} className="flex items-center justify-between gap-4 py-2.5">
                       <span className="text-sm text-[#cdd2e6]">{PRINTING_LABELS[p]}</span>

@@ -105,3 +105,27 @@ export function getHeadlineQuote(
   }
   return null
 }
+
+/**
+ * TCGdex sometimes flags a holo-only card as having a single "normal" printing
+ * while TCGplayer files its only price under "holofoil". When the card has
+ * exactly one printing (standard) and exactly one priced TCGplayer entry
+ * (holofoil), that entry can only belong to that printing, so it is re-keyed
+ * to "normal". Cards with several printings are never re-keyed.
+ */
+export function alignPricing(card: Pick<TCGdexCard, 'variants' | 'pricing'>): TCGdexCard['pricing'] {
+  const tcg = card.pricing?.tcgplayer
+  const v = card.variants
+  if (!tcg || !v) return card.pricing
+
+  const flagged = (['normal', 'reverse', 'holo', 'firstEdition', 'wPromo'] as const).filter((k) => v[k] === true)
+  const pricedKeys = Object.keys(tcg).filter((k) => {
+    const e = tcg[k] as { marketPrice?: unknown } | undefined
+    return e && typeof e === 'object' && typeof e.marketPrice === 'number'
+  })
+  if (flagged.length === 1 && flagged[0] === 'normal' && pricedKeys.length === 1 && pricedKeys[0] === 'holofoil') {
+    const { holofoil, ...rest } = tcg
+    return { ...card.pricing, tcgplayer: { ...rest, normal: holofoil } }
+  }
+  return card.pricing
+}

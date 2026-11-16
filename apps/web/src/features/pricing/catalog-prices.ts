@@ -1,4 +1,5 @@
 import { tcgdex, type TCGdexCard } from '@/lib/tcgdex/client'
+import { alignPricing } from './tcgplayer'
 
 /** Fetches pricing blocks for card ids with bounded concurrency (TCGdex responses are cached for 1h). */
 export async function fetchPricingByCard(
@@ -12,7 +13,7 @@ export async function fetchPricingByCard(
     while (next < ids.length) {
       const id = ids[next++]
       const card = await tcgdex.getCard(id)
-      out.set(id, card?.pricing)
+      out.set(id, card ? alignPricing(card) : undefined)
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, ids.length) }, worker))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getMarketQuote, priceItem } from './tcgplayer'
+import { alignPricing, getMarketQuote, priceItem } from './tcgplayer'
 
 const pricing = {
   tcgplayer: {
@@ -49,5 +49,29 @@ describe('priceItem', () => {
   })
   it('never prices graded slabs from raw data', () => {
     expect(priceItem(pricing, { printing: 'standard', isGraded: true, condition: 'near_mint' }).status).toBe('unavailable')
+  })
+})
+
+describe('alignPricing', () => {
+  const holoOnly = { tcgplayer: { unit: 'USD', holofoil: { marketPrice: 54.46 } } }
+  const onlyNormal = { normal: true, reverse: false, holo: false, firstEdition: false, wPromo: false }
+
+  it('re-keys a lone holofoil price on a single-printing card so it matches that printing', () => {
+    const aligned = alignPricing({ variants: onlyNormal, pricing: holoOnly })
+    expect(getMarketQuote(aligned, 'standard')).toMatchObject({ available: true, quote: { price: 54.46 } })
+  })
+
+  it('does not re-key when the card has several printings', () => {
+    const aligned = alignPricing({ variants: { ...onlyNormal, reverse: true }, pricing: holoOnly })
+    expect(getMarketQuote(aligned, 'standard').available).toBe(false)
+  })
+
+  it('does not re-key when several prices exist', () => {
+    const p = { tcgplayer: { holofoil: { marketPrice: 1 }, 'reverse-holofoil': { marketPrice: 2 } } }
+    expect(getMarketQuote(alignPricing({ variants: onlyNormal, pricing: p }), 'standard').available).toBe(false)
+  })
+
+  it('leaves exact matches untouched', () => {
+    expect(alignPricing({ variants: onlyNormal, pricing })).toBe(pricing)
   })
 })
